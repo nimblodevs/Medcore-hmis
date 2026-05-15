@@ -153,6 +153,7 @@ const SidebarDropdown = ({ icon: Icon, label, active, isOpen, onToggle, children
 
 const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
   const [patientsMenuOpen, setPatientsMenuOpen] = useState(true);
+  const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
 
   return (
     <>
@@ -229,10 +230,26 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
               />
               <SidebarItem 
                 icon={ClipboardList}
-                label="Patient List" 
+                label="Patient Registry" 
                 active={activePage === "patient_list"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("patient_list")} 
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
+              icon={Database}
+              label="Finance"
+              active={activePage === "finance" || activePage === "op_cons_billing"}
+              isOpen={financeMenuOpen}
+              onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
+            >
+              <SidebarItem
+                icon={ClipboardList}
+                label="OP Cons Billing"
+                active={activePage === "op_cons_billing"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("op_cons_billing")}
               />
             </SidebarDropdown>
 

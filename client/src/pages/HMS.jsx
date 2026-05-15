@@ -7,6 +7,7 @@ import Sidebar from "../components/layout/Sidebar";
 // Lazy load page components
 const PatientRegistration = lazy(() => import("./Patient/RegistrationForm"));
 const PatientList = lazy(() => import("./Patient/PatientList"));
+const OpConsBilling = lazy(() => import("./Finance/OpConsBilling"));
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
@@ -27,6 +28,7 @@ const HMS = () => {
     const path = location.pathname;
     if (path === "/patients/register") return "patients";
     if (path === "/patients/list") return "patient_list";
+    if (path === "/finance/op-cons-billing") return "op_cons_billing";
     if (path === "/dashboard") return "dashboard";
     return "patients"; // Default
   };
@@ -34,6 +36,7 @@ const HMS = () => {
   const handlePageChange = (page) => {
     if (page === "patients") navigate("/patients/register");
     else if (page === "patient_list") navigate("/patients/list");
+    else if (page === "op_cons_billing") navigate("/finance/op-cons-billing");
     else if (page === "dashboard") navigate("/dashboard");
     setIsSidebarOpen(false);
   };
@@ -58,6 +61,7 @@ const HMS = () => {
               <Routes>
                 <Route path="/patients/register" element={<PatientRegistration />} />
                 <Route path="/patients/list" element={<PatientList onRegisterClick={() => navigate("/patients/register")} />} />
+                <Route path="/finance/op-cons-billing" element={<OpConsBilling />} />
                 <Route path="/dashboard" element={
                   <div className="flex h-full items-center justify-center py-20">
                     <div className="text-center">

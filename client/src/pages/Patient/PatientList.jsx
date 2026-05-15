@@ -101,7 +101,7 @@ const PatientList = ({ onRegisterClick }) => {
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Patient Directory</h1>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">Patient Registry</h1>
           <p className="text-sm font-medium text-slate-500">Manage and view all registered medical records</p>
         </div>
         <div className="flex items-center gap-3">
