@@ -15,28 +15,103 @@ import {
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
-  <button
-    onClick={onClick}
-    className={`group relative flex w-full items-center gap-3 rounded-xl px-3 transition-all ${
-      active
-        ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
-        : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-    } ${isSubItem ? "ml-4 w-[calc(100%-1rem)] py-2" : "py-2.5"}`}
-  >
-    {isSubItem && !active && (
-      <div className="absolute -left-3 top-0 h-full w-px bg-slate-200" />
-    )}
-    {Icon && (
-      <Icon 
-        size={isSubItem ? 16 : 20} 
-        className={active ? "text-white" : "text-slate-400 group-hover:text-slate-900"} 
-        strokeWidth={isSubItem ? 2.5 : 2}
+<button
+  onClick={onClick}
+  className={[
+    `
+    group relative flex w-full items-center gap-1.5
+    overflow-hidden rounded-xl
+    px-2.5 transition-all duration-200
+    `,
+
+    active
+      ? `
+        bg-gradient-to-r
+        from-cyan-50
+        via-sky-50
+        to-white
+        text-cyan-700
+      `
+      : `
+        text-slate-500
+        hover:bg-slate-100
+        hover:text-slate-900
+      `,
+
+    isSubItem
+      ? "ml-3 w-[calc(100%-0.75rem)] py-2"
+      : "py-2.5",
+  ].join(" ")}
+>
+  {/* Sub-item Connector */}
+  {isSubItem && !active && (
+    <div
+      className="
+        absolute -left-2 top-0
+        h-full w-px bg-slate-200
+      "
+    />
+  )}
+
+  {/* Icon */}
+  {Icon && (
+    <div
+      className={[
+        `
+        flex shrink-0 items-center justify-center
+        rounded-lg transition-all duration-200
+        `,
+
+        isSubItem ? "size-7" : "size-8",
+
+        active
+          ? `
+            bg-cyan-600
+            text-white
+          `
+          : `
+            bg-slate-100
+            text-slate-500
+            group-hover:bg-white
+            group-hover:text-slate-900
+          `,
+      ].join(" ")}
+    >
+      <Icon
+        size={isSubItem ? 14 : 17}
+        strokeWidth={isSubItem ? 2.4 : 2.1}
       />
-    )}
-    <span className={`${isSubItem ? "text-xs font-semibold" : "text-sm font-medium"}`}>
-      {label}
-    </span>
-  </button>
+    </div>
+  )}
+
+  {/* Label */}
+  <span
+    className={[
+      "truncate tracking-tight",
+
+      isSubItem
+        ? "text-xs font-semibold"
+        : "text-sm font-medium",
+    ].join(" ")}
+  >
+    {label}
+  </span>
+
+  {/* Soft Hover Overlay */}
+  {!active && (
+    <div
+      className="
+        absolute inset-0 opacity-0
+        transition-opacity duration-200
+        group-hover:opacity-100
+        bg-gradient-to-r
+        from-transparent
+        via-white/10
+        to-transparent
+      "
+    />
+  )}
+</button>
 );
 
 const SidebarDropdown = ({ icon: Icon, label, active, isOpen, onToggle, children }) => (
@@ -100,8 +175,31 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900">
             Medi<span className="text-cyan-600">Core</span>
+            <p className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+              HMS v0.1
+            </p>
           </span>
+          
         </div>
+
+        <div className="border-b border-slate-200 px-4 py-4">
+        <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+              MFL 13104
+            </p>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              Online
+            </span>
+          </div>
+          <p className="mt-1 text-sm font-semibold text-slate-800">
+            Nairobi, Kenya
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            General outpatient facility
+          </p>
+        </div>
+      </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <div className="mb-4 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
