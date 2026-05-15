@@ -1,0 +1,126 @@
+import { 
+  LayoutDashboard, 
+  Users, 
+  Calendar, 
+  ClipboardList, 
+  Settings, 
+  HelpCircle,
+  Activity,
+  HeartPulse,
+  Database
+} from "lucide-react";
+
+const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
+      active
+        ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
+        : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+    }`}
+  >
+    <Icon size={20} className={active ? "text-white" : "text-slate-400 group-hover:text-slate-900"} />
+    <span className="text-sm font-medium">{label}</span>
+  </button>
+);
+
+const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 items-center gap-3 px-6">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-lg shadow-cyan-600/30">
+            <HeartPulse size={22} strokeWidth={2.5} />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-slate-900">
+            Medi<span className="text-cyan-600">Core</span>
+          </span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="mb-4 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Main Menu
+          </div>
+          <nav className="space-y-1">
+            <SidebarItem 
+              icon={LayoutDashboard} 
+              label="Dashboard" 
+              active={activePage === "dashboard"}
+              onClick={() => onPageChange?.("dashboard")} 
+            />
+            <SidebarItem 
+              icon={Users} 
+              label="Patients" 
+              active={activePage === "patients"}
+              onClick={() => onPageChange?.("patients")} 
+            />
+            <SidebarItem 
+              icon={Calendar} 
+              label="Appointments" 
+              active={activePage === "appointments"}
+              onClick={() => onPageChange?.("appointments")} 
+            />
+            <SidebarItem 
+              icon={ClipboardList} 
+              label="Prescriptions" 
+              active={activePage === "prescriptions"}
+              onClick={() => onPageChange?.("prescriptions")} 
+            />
+          </nav>
+
+          <div className="mt-8 mb-4 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            System
+          </div>
+          <nav className="space-y-1">
+            <SidebarItem 
+              icon={Activity} 
+              label="Analytics" 
+              active={activePage === "analytics"}
+              onClick={() => onPageChange?.("analytics")} 
+            />
+            <SidebarItem 
+              icon={Database} 
+              label="Reports" 
+              active={activePage === "reports"}
+              onClick={() => onPageChange?.("reports")} 
+            />
+            <SidebarItem 
+              icon={Settings} 
+              label="Settings" 
+              active={activePage === "settings"}
+              onClick={() => onPageChange?.("settings")} 
+            />
+          </nav>
+        </div>
+
+        <div className="mt-auto border-t border-slate-100 p-4">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm">
+                <HelpCircle size={18} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-slate-900">Need Help?</p>
+                <p className="text-[10px] text-slate-500">Contact IT Support</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
+
+export default Sidebar;

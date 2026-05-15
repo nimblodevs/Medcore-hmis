@@ -1,0 +1,553 @@
+// County -> sub-county -> ward lookup used by the registration form.
+// Ward arrays are present as placeholders for now so the structure is ready
+// for a proper ward dataset import without reshaping the form again.
+const kenyaLocations = {
+  Baringo: {
+    subCounties: [
+      "Baringo central",
+      "Baringo north",
+      "Baringo south",
+      "Eldama ravine",
+      "Mogotio",
+      "Tiaty",
+    ],
+    wards: {},
+  },
+  Bomet: {
+    subCounties: [
+      "Bomet central",
+      "Bomet east",
+      "Chepalungu",
+      "Konoin",
+      "Sotik",
+    ],
+    wards: {},
+  },
+  Bungoma: {
+    subCounties: [
+      "Bumula",
+      "Kabuchai",
+      "Kanduyi",
+      "Kimilil",
+      "Mt Elgon",
+      "Sirisia",
+      "Tongaren",
+      "Webuye east",
+      "Webuye west",
+    ],
+    wards: {},
+  },
+  Busia: {
+    subCounties: [
+      "Budalangi",
+      "Butula",
+      "Funyula",
+      "Nambele",
+      "Teso North",
+      "Teso South",
+    ],
+    wards: {},
+  },
+  "Elgeyo-Marakwet": {
+    subCounties: [
+      "Keiyo north",
+      "Keiyo south",
+      "Marakwet east",
+      "Marakwet west",
+    ],
+    wards: {},
+  },
+  Embu: {
+    subCounties: ["Manyatta", "Mbeere north", "Mbeere south", "Runyenjes"],
+    wards: {},
+  },
+  Garissa: {
+    subCounties: [
+      "Daadab",
+      "Fafi",
+      "Garissa",
+      "Hulugho",
+      "Ijara",
+      "Lagdera balambala",
+    ],
+    wards: {
+      "Daadab": ["Dadaab", "Labasigale", "Damajale"],
+      "Fafi": ["Bura", "Dekaharia", "Jarajilla", "Nanighi"],
+      "Garissa": ["Waberi", "Galbet", "Township", "Iftin"],
+      "Hulugho": ["Hulugho", "Sangailu"],
+      "Ijara": ["Ijara", "Masalani"],
+      "Lagdera balambala": ["Balanbala", "Danyere", "Jarajara", "Saka", "Sankuri"]
+    },
+  },
+  "Homa Bay": {
+    subCounties: [
+      "Homabay town",
+      "Kabondo",
+      "Karachwonyo",
+      "Kasipul",
+      "Mbita",
+      "Ndhiwa",
+      "Rangwe",
+      "Suba",
+    ],
+    wards: {},
+  },
+  Isiolo: {
+    subCounties: ["Isiolo", "Garba tula", "Merit"],
+    wards: {},
+  },
+  Kajiado: {
+    subCounties: [
+      "Isinya.",
+      "Kajiado Central.",
+      "Kajiado North.",
+      "Loitokitok.",
+      "Mashuuru.",
+    ],
+    wards: {},
+  },
+  Kakamega: {
+    subCounties: [
+      "Butere",
+      "Kakamega central",
+      "Kakamega east",
+      "Kakamega north",
+      "Kakamega south",
+      "Khwisero",
+      "Lugari",
+      "Lukuyani",
+      "Lurambi",
+      "Matete",
+      "Mumias",
+      "Mutungu",
+      "Navakholo",
+    ],
+    wards: {},
+  },
+  Kericho: {
+    subCounties: [
+      "Ainamoi",
+      "Belgut",
+      "Bureti",
+      "Kipkelion east",
+      "Kipkelion west",
+      "Soin sigowet",
+    ],
+    wards: {},
+  },
+  Kiambu: {
+    subCounties: [
+      "Gatundu north",
+      "Gatundu south",
+      "Githunguri",
+      "Juja",
+      "Kabete",
+      "Kiambaa",
+      "Kiambu",
+      "Kikuyu",
+      "Limuru",
+      "Ruiru",
+      "Thika town",
+      "lari",
+    ],
+    wards: {
+      "Gatundu north": ["Gituamba", "Githobokoni", "Chania", "Mang’u", "Nduru"],
+      "Gatundu south": ["Kiamwangi", "Kiganjo", "Ndunyu", "Ng’enda", "Kiamenya"],
+      "Githunguri": ["Githunguri", "Githiga", "Ikinu", "Ngewewa", "Komothai"],
+      "Juja": ["Murera", "Theta", "Juja", "Witeithie", "Kalimoni"],
+      "Kabete": ["Gitaru", "Muguga", "Nyadhuna", "Kabete", "Uthiru"],
+      "Kiambaa": ["Cianda", "Karuri", "Ndenderu", "Muchatha", "Kihara"],
+      "Kiambu": ["Ting’ang’a", "Ndumberi", "Riabai", "Township"],
+      "Kikuyu": ["Karai", "Nachu", "Sigona", "Kikuyu", "Kinoo"],
+      "Limuru": ["Bibirioni", "Limuru Central", "Ndeiya", "Limuru East", "Ngecha Tigoni"],
+      "Ruiru": ["Biashara", "Gatongora", "Kahawa Sukari", "Kahawa Wendani", "Kiuu", "Mwiki", "Mwihoko"],
+      "Thika town": ["Township", "Kamenu", "Hospital", "Gatuanyaga", "Ngoliba"],
+      "lari": ["Kinale", "Kijabe", "Nyanduma", "Kamburu", "Lari/Kirenga"]
+    },
+  },
+  Kilifi: {
+    subCounties: [
+      "Genzw",
+      "Kaloleni",
+      "Kilifi north",
+      "Kilifi south",
+      "Magarini",
+      "Malindi",
+      "Rabai",
+    ],
+    wards: {},
+  },
+  Kirinyaga: {
+    subCounties: [
+      "Kirinyaga central",
+      "Kirinyaga east",
+      "Kirinyaga west",
+      "Mwea east",
+      "Mwea west",
+    ],
+    wards: {},
+  },
+  Kisii: {
+    subCounties: [],
+    wards: {},
+  },
+  Kisumu: {
+    subCounties: [
+      "Kisumu central",
+      "Kisumu east",
+      "Kisumu west",
+      "Mohoroni",
+      "Nyakach",
+      "Nyando",
+      "Seme",
+    ],
+    wards: {
+      "Kisumu central": ["Railways", "Shafauri/Guza", "Kondele", "Market Milimani", "Migosi", "Nyalenda B"],
+      "Kisumu east": ["Kajulu", "Kolwa East", "Kolwa West", "Manyatta B", "Nyalenda A"],
+      "Kisumu west": ["South West Kisumu", "Central Kisumu", "Kisumu North", "West Kisumu", "North West Kisumu"],
+      "Mohoroni": ["Miwani", "Ombeyi", "Masogo/Nyang’oma", "Muhoroni/Koru", "Fort Ternan/Chilchila"],
+      "Nyakach": ["South Nyakach", "North Nyakach", "Central Nyakach", "West Nyakach", "Upper Nyakach"],
+      "Nyando": ["East Kano/Wawidhi", "Awasi/Onjiko", "Ahero"],
+      "Seme": ["West Seme", "Central Seme", "North Seme", "East Seme"]
+    },
+  },
+  Kitui: {
+    subCounties: [
+      "Ikutha",
+      "Katulani",
+      "Kisasi",
+      "Kitui central",
+      "Kitui west",
+      "Lower yatta",
+      "Matiyani",
+      "Migwani",
+      "Mutitu",
+      "Mutomo",
+      "Muumonikyusu",
+      "Mwingi central",
+      "Mwingi east",
+      "Nzambani",
+      "Tseikuru",
+    ],
+    wards: {},
+  },
+  Kwale: {
+    subCounties: ["Kinango", "Lungalunga", "Msambweni", "Mutuga"],
+    wards: {},
+  },
+  Laikipia: {
+    subCounties: [
+      "Laikipia central",
+      "Laikipia east",
+      "Laikipia north",
+      "Laikipia west",
+      "Nyahururu",
+    ],
+    wards: {},
+  },
+  Lamu: {
+    subCounties: ["Lamu East", "Lamu West"],
+    wards: {},
+  },
+  Machakos: {
+    subCounties: [
+      "Kathiani",
+      "Machakos town",
+      "Masinga",
+      "Matungulu",
+      "Mavoko",
+      "Mwala",
+      "Yatta",
+    ],
+    wards: {},
+  },
+  Makueni: {
+    subCounties: [
+      "Kaiti",
+      "Kibwei west",
+      "Kibwezi east",
+      "Kilome",
+      "Makueni",
+      "Mbooni",
+    ],
+    wards: {},
+  },
+  Mandera: {
+    subCounties: [
+      "Banissa",
+      "Lafey",
+      "Mandera East",
+      "Mandera North",
+      "Mandera South",
+      "Mandera West",
+    ],
+    wards: {},
+  },
+  Marsabit: {
+    subCounties: ["Laisamis", "Moyale", "North hor", "Saku"],
+    wards: {},
+  },
+  Meru: {
+    subCounties: [
+      "Buuri",
+      "Igembe central",
+      "Igembe north",
+      "Igembe south",
+      "Imenti central",
+      "Imenti north",
+      "Imenti south",
+      "Tigania east",
+      "Tigania west",
+    ],
+    wards: {},
+  },
+  Migori: {
+    subCounties: [
+      "Awendo",
+      "Kuria east",
+      "Kuria west",
+      "Mabera",
+      "Ntimaru",
+      "Rongo",
+      "Suna east",
+      "Suna west",
+      "Uriri",
+    ],
+    wards: {},
+  },
+  Mombasa: {
+    subCounties: ["Changamwe", "Jomvu", "Kisauni", "Likoni", "Mvita", "Nyali"],
+    wards: {
+      "Changamwe": ["Airport", "Changamwe", "Chaani", "Port Reitz", "Kipevu"],
+      "Jomvu": ["Jomvu Kuu", "Magongo", "Mikindani"],
+      "Kisauni": ["Bamburi", "Junda", "Magogoni", "Mtopanga", "Nyali", "Shanzu"],
+      "Likoni": ["Likoni", "Mtongwe", "Shika Adabu", "Timbwani"],
+      "Mvita": ["Majengo", "Mji wa Kale/Makadara", "Tononoka", "Tudor"],
+      "Nyali": ["Frere Town", "Kongowea", "Kadzandani", "Mkomani", "Ziwa la Ng'ombe"]
+    },
+  },
+  "Murang'a": {
+    subCounties: [
+      "Gatanga",
+      "Kahuro",
+      "Kandara",
+      "Kangema",
+      "Kigumo",
+      "Kiharu",
+      "Mathioya",
+      "Murang’a south",
+    ],
+    wards: {},
+  },
+  Nairobi: {
+    subCounties: [
+      "Dagoretti North Sub County",
+      "Dagoretti South Sub County",
+      "Embakasi Central Sub Count",
+      "Embakasi East Sub County",
+      "Embakasi North Sub County",
+      "Embakasi South Sub County",
+      "Embakasi West Sub County",
+      "Kamukunji Sub County",
+      "Kasarani Sub County",
+      "Kibra Sub County",
+      "Lang'ata Sub County",
+      "Makadara Sub County",
+      "Mathare Sub County",
+      "Roysambu Sub County",
+      "Ruaraka Sub County",
+      "Starehe Sub County",
+      "Westlands Sub County",
+    ],
+    wards: {
+      "Dagoretti North Sub County": ["Kilimani", "Kawangware", "Gatina", "Kileleshwa", "Kabiro"],
+      "Dagoretti South Sub County": ["Mutu-ini", "Ngando", "Riruta", "Uthiru/Ruthimitu", "Waithaka"],
+      "Embakasi Central Sub Count": ["Kayole North", "Kayole North Central", "Kayole South", "Komarock", "Matopeni/Spring Valley"],
+      "Embakasi East Sub County": ["Upper Savanna", "Lower Savanna", "Embakasi", "Utawala", "Mihang'o"],
+      "Embakasi North Sub County": ["Kariobangi North", "Dandora Area I", "Dandora Area II", "Dandora Area III", "Dandora Area IV"],
+      "Embakasi South Sub County": ["Imara Daima", "Kwa Njenga", "Kwa Reuben", "Pipeline", "Kware"],
+      "Embakasi West Sub County": ["Umoja I", "Umoja II", "Mowlem", "Kariobangi South"],
+      "Kamukunji Sub County": ["Pumwani", "Eastleigh North", "Eastleigh South", "Airbase", "California"],
+      "Kasarani Sub County": ["Clay City", "Mwiki", "Kasarani", "Njiru", "Ruai"],
+      "Kibra Sub County": ["Laini Saba", "Lindi", "Makina", "Woodley/Kenyatta Golf Course", "Sarang'ombe"],
+      "Lang'ata Sub County": ["Karen", "Nairobi West", "Mugumo-ini", "South C", "Nyayo Highrise"],
+      "Makadara Sub County": ["Maringo/Hamza", "Viwandani", "Harambee", "Makongeni"],
+      "Mathare Sub County": ["Hospital", "Mabatini", "Huruma", "Ngei", "Mlango Kubwa", "Kiamaiko"],
+      "Roysambu Sub County": ["Roysambu", "Garden Estate", "Ridgeways", "Githurai", "Kahawa West", "Zimmerman", "Kahawa"],
+      "Ruaraka Sub County": ["Babadogo", "Utalii", "Mathare North", "Lucky Summer", "Korogocho"],
+      "Starehe Sub County": ["Nairobi Central", "Ngara", "Pangani", "Ziwani/Kariokor", "Landimawe", "South B"],
+      "Westlands Sub County": ["Kitisuru", "Parklands/Highridge", "Karura", "Kangemi", "Mountain View"]
+    },
+  },
+  Nakuru: {
+    subCounties: [
+      "Bahati",
+      "Gilgil",
+      "Kuresoi north",
+      "Kuresoi south",
+      "Molo",
+      "Naivasha",
+      "Nakuru town east",
+      "Nakuru town west",
+      "Njoro",
+      "Rongai",
+      "Subukia",
+    ],
+    wards: {
+      "Bahati": ["Bahati", "Kiamaina", "Lanet/Umoja", "Dundori", "Kabatini"],
+      "Gilgil": ["Gilgil", "Elementaita", "Mbaruk/Eburu", "Malewa West", "Murindat"],
+      "Kuresoi north": ["Kiptororo", "Nyota", "Sirikwa", "Kamara"],
+      "Kuresoi south": ["Amalo", "Keringet", "Kiptagich", "Tinet"],
+      "Molo": ["Mariashoni", "Elburgon", "Turi", "Molo"],
+      "Naivasha": ["Biashara", "Hell’s Gate", "Lake View", "Mai Mahiu", "Naivasha East", "Viwanda", "Olkaria"],
+      "Nakuru town east": ["Biashara", "Kivumbini", "Flamingo", "Menengai", "Nakuru East"],
+      "Nakuru town west": ["Barut", "London", "Kaptembwa", "Kapkures", "Rhoda", "Shaabab"],
+      "Njoro": ["Mau Narok", "Mauche", "Kihingo", "Nessuit", "Lare", "Njoro"],
+      "Rongai": ["Menengai West", "Soin", "Visoi", "Mosop", "Solai"],
+      "Subukia": ["Subukia", "Waseges", "Kabazi"]
+    },
+  },
+  Nandi: {
+    subCounties: [
+      "Aldai",
+      "Chesumei",
+      "Emgwen",
+      "Mosop",
+      "Namdi hills",
+      "Tindiret",
+    ],
+    wards: {},
+  },
+  Narok: {
+    subCounties: [
+      "Narok east",
+      "Narok north",
+      "Narok south",
+      "Narok west",
+      "Transmara east",
+      "Transmara west",
+    ],
+    wards: {},
+  },
+  Nyamira: {
+    subCounties: [
+      "Borabu",
+      "Manga",
+      "Masaba north",
+      "Nyamira north",
+      "Nyamira south",
+    ],
+    wards: {},
+  },
+  Nyandarua: {
+    subCounties: [
+      "Kinangop",
+      "Kipipiri",
+      "Ndaragwa",
+      "Ol Kalou",
+      "Ol joro orok",
+    ],
+    wards: {},
+  },
+  Nyeri: {
+    subCounties: [
+      "Kieni east",
+      "Kieni west",
+      "Mathira east",
+      "Mathira west",
+      "Mkurweni",
+      "Nyeri town",
+      "Othaya",
+      "Tetu",
+    ],
+    wards: {},
+  },
+  Samburu: {
+    subCounties: ["Samburu east", "Samburu north", "Samburu west"],
+    wards: {},
+  },
+  Siaya: {
+    subCounties: [
+      "Alego usonga",
+      "Bondo",
+      "Gem",
+      "Rarieda",
+      "Ugenya",
+      "Unguja",
+    ],
+    wards: {},
+  },
+  "Taita-Taveta": {
+    subCounties: ["Mwatate", "Taveta", "Voi", "Wundanyi"],
+    wards: {},
+  },
+  "Tana River": {
+    subCounties: ["Bura", "Galole", "Garsen"],
+    wards: {},
+  },
+  "Tharaka-Nithi": {
+    subCounties: [
+      "Chuka",
+      "Igambangobe",
+      "Maara",
+      "Muthambi",
+      "Tharak north",
+      "Tharaka south",
+    ],
+    wards: {},
+  },
+  "Trans-Nzoia": {
+    subCounties: ["Cherangany", "Endebess", "Kiminini", "Kwanza", "Saboti"],
+    wards: {},
+  },
+  Turkana: {
+    subCounties: [
+      "Loima",
+      "Turkana central",
+      "Turkana east",
+      "Turkana north",
+      "Turkana south",
+    ],
+    wards: {},
+  },
+  "Uasin Gishu": {
+    subCounties: ["Ainabkoi", "Kapseret", "Kesses", "Moiben", "Soy", "Turbo"],
+    wards: {
+      "Ainabkoi": ["Ainabkoi/Olare", "Kaptagat", "Kapsoya"],
+      "Kapseret": ["Simat/Kapseret", "Kipkenyo", "Ngeria", "Megun", "Langas"],
+      "Kesses": ["Racecourse", "Cheptiret/Kipchamo", "Tulwet/Chuiyat", "Tarakwa"],
+      "Moiben": ["Tembelio", "Sergoit", "Karuna/Meibeki", "Moiben", "Kimumu"],
+      "Soy": ["Mois Bridge", "Kapkures", "Ziwa", "Segero/Barsombe", "Kipsomba", "Soy", "Kuinet/Kapsuswa"],
+      "Turbo": ["Ngenyilel", "Tapsagoi", "Kamagut", "Kiplombe", "Kapsaos", "Huruma"]
+    },
+  },
+  Vihiga: {
+    subCounties: ["Emuhaya", "Hamisi", "Luanda", "Sabatia", "vihiga"],
+    wards: {},
+  },
+  Wajir: {
+    subCounties: [
+      "Eldas",
+      "Tarbaj",
+      "Wajir East",
+      "Wajir North",
+      "Wajir South",
+      "Wajir West",
+    ],
+    wards: {},
+  },
+  "West Pokot": {
+    subCounties: ["Central Pokot", "North Pokot", "Pokot South", "West Pokot"],
+    wards: {},
+  },
+};
+
+export const getCounties = () => Object.keys(kenyaLocations);
+
+export const getSubCounties = (county) =>
+  kenyaLocations[county]?.subCounties ?? [];
+
+export const getWards = (county, subCounty) =>
+  kenyaLocations[county]?.wards?.[subCounty] ?? [];
+
+export default kenyaLocations;
