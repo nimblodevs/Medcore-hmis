@@ -36,3 +36,12 @@ export const searchPatients = async (term) => {
     );
   });
 };
+
+/**
+ * Fetches all patients from the system.
+ * @returns {Promise<Array>}
+ */
+export const getAllPatients = async () => {
+  await delay(800);
+  return mockPatients;
+};

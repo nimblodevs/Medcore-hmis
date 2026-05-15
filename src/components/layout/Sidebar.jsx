@@ -1,6 +1,10 @@
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   LayoutDashboard, 
   Users, 
+  UserPlus,
+  ChevronDown,
   Calendar, 
   ClipboardList, 
   Settings, 
@@ -10,21 +14,71 @@ import {
   Database
 } from "lucide-react";
 
-const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
+const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
   <button
     onClick={onClick}
-    className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
+    className={`group relative flex w-full items-center gap-3 rounded-xl px-3 transition-all ${
       active
-        ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
+        ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
         : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-    }`}
+    } ${isSubItem ? "ml-4 w-[calc(100%-1rem)] py-2" : "py-2.5"}`}
   >
-    <Icon size={20} className={active ? "text-white" : "text-slate-400 group-hover:text-slate-900"} />
-    <span className="text-sm font-medium">{label}</span>
+    {isSubItem && !active && (
+      <div className="absolute -left-3 top-0 h-full w-px bg-slate-200" />
+    )}
+    {Icon && (
+      <Icon 
+        size={isSubItem ? 16 : 20} 
+        className={active ? "text-white" : "text-slate-400 group-hover:text-slate-900"} 
+        strokeWidth={isSubItem ? 2.5 : 2}
+      />
+    )}
+    <span className={`${isSubItem ? "text-xs font-semibold" : "text-sm font-medium"}`}>
+      {label}
+    </span>
   </button>
 );
 
+const SidebarDropdown = ({ icon: Icon, label, active, isOpen, onToggle, children }) => (
+  <div className="space-y-1">
+    <button
+      onClick={onToggle}
+      className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition-all ${
+        active && !isOpen
+          ? "bg-cyan-50 text-cyan-700 font-semibold"
+          : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <Icon size={20} className={active ? "text-cyan-600" : "text-slate-400 group-hover:text-slate-900"} />
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <ChevronDown 
+        size={16} 
+        className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
+      />
+    </button>
+    <AnimatePresence initial={false}>
+      {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className="overflow-hidden"
+        >
+          <div className="mt-1 space-y-1">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
 const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
+  const [patientsMenuOpen, setPatientsMenuOpen] = useState(true);
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -60,12 +114,30 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
               active={activePage === "dashboard"}
               onClick={() => onPageChange?.("dashboard")} 
             />
-            <SidebarItem 
-              icon={Users} 
-              label="Patients" 
-              active={activePage === "patients"}
-              onClick={() => onPageChange?.("patients")} 
-            />
+            
+            <SidebarDropdown
+              icon={Users}
+              label="Patient"
+              active={activePage === "patients" || activePage === "patient_list"}
+              isOpen={patientsMenuOpen}
+              onToggle={() => setPatientsMenuOpen(!patientsMenuOpen)}
+            >
+              <SidebarItem 
+                icon={UserPlus}
+                label="Register Patient" 
+                active={activePage === "patients"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("patients")} 
+              />
+              <SidebarItem 
+                icon={ClipboardList}
+                label="Patient List" 
+                active={activePage === "patient_list"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("patient_list")} 
+              />
+            </SidebarDropdown>
+
             <SidebarItem 
               icon={Calendar} 
               label="Appointments" 
