@@ -733,6 +733,65 @@ const PatientRegistration = () => {
     setLastVisitDate(patient.lastVisitDate || "");
     setRegistrationDate(patient.registrationDate || "");
 
+    // Mark required fields as touched if they are missing so they get highlighted
+    const requiredFields = [
+      "title",
+      "surname",
+      "firstName",
+      "gender",
+      "dateOfBirth",
+      "primaryPhone",
+      "nationality",
+      "documentNumber",
+      "religion",
+      "county",
+      "subCounty",
+      "ward",
+      "village",
+      "physicalAddress",
+      "patientCategory",
+      "paymentCategory",
+      "employer",
+      "nokSurname",
+      "nokFirstName",
+      "nokRelationship",
+      "nokPhone",
+      "nokIdNumber",
+      "nokAddress",
+      "nokEmployer",
+      "emergencyName",
+      "emergencyRelationship",
+      "emergencyPhone",
+    ];
+
+    const newTouched = {};
+    requiredFields.forEach((field) => {
+      // If we don't have a value for it, mark as touched to show validation error
+      // Note: mapping patient keys to state keys is needed if different
+      let val;
+      if (field === "surname") val = patient.lastName;
+      else if (field === "dateOfBirth") val = patient.dob;
+      else if (field === "primaryPhone") val = patient.phoneNumber;
+      else if (field === "paymentCategory") val = patient.paymentCategory;
+      else if (field === "patientCategory") val = patient.patientCategory;
+      else if (field === "nokSurname") val = patient.nok?.surname;
+      else if (field === "nokFirstName") val = patient.nok?.firstName;
+      else if (field === "nokRelationship") val = patient.nok?.relationship;
+      else if (field === "nokPhone") val = patient.nok?.phone;
+      else if (field === "nokIdNumber") val = patient.nok?.idNumber;
+      else if (field === "nokAddress") val = patient.nok?.address;
+      else if (field === "nokEmployer") val = patient.nok?.employer;
+      else if (field === "emergencyName") val = patient.emergency?.name;
+      else if (field === "emergencyRelationship") val = patient.emergency?.relationship;
+      else if (field === "emergencyPhone") val = patient.emergency?.phone;
+      else val = patient[field];
+
+      if (!val) {
+        newTouched[field] = true;
+      }
+    });
+    setTouched(newTouched);
+
     setShowSearchResults(false);
     setIsEditingPatient(true);
   };
