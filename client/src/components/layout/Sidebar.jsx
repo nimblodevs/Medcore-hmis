@@ -17,6 +17,7 @@ import {
   Receipt,
   FileText,
   CreditCard,
+  Send,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -247,7 +248,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments"].includes(activePage)}
+              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -285,6 +286,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "credit_payments"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("credit_payments")}
+              />
+              <SidebarItem
+                icon={Send}
+                label="Dispatches"
+                active={activePage === "dispatches"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("dispatches")}
               />
             </SidebarDropdown>
 
