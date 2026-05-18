@@ -15,6 +15,7 @@ import {
   Building2,
   ShieldCheck,
   Receipt,
+  FileText,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -245,7 +246,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["op_cons_billing", "debtors", "schemes"].includes(activePage)}
+              active={["op_cons_billing", "debtors", "schemes", "invoices"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -269,6 +270,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "schemes"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("schemes")}
+              />
+              <SidebarItem
+                icon={FileText}
+                label="Invoices"
+                active={activePage === "invoices"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("invoices")}
               />
             </SidebarDropdown>
 
