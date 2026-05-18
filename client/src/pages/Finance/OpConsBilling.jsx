@@ -1,20 +1,8 @@
 import { motion } from "motion/react";
+import { mockPatients } from "../../constants/mockPatients";
 
-const samplePatient = {
-  uhid: "UHID-000231",
-  patientId: "PID-10045",
-  title: "Ms",
-  firstName: "Amina",
-  middleName: "Wanjiku",
-  lastName: "Otieno",
-  gender: "Female",
-  dob: "1994-08-12",
-  phoneNumber: "0712345678",
-  paymentCategory: "NHIF",
-  nationality: "Kenyan",
-  county: "Nairobi",
-  patientCategory: "General",
-};
+const samplePatient =
+  mockPatients.find((p) => p.paymentCategory === "Corporate") || mockPatients[0];
 
 const formatDate = (dateString) => {
   const [year, month, day] = dateString.split("-");
@@ -43,9 +31,14 @@ const getAgeGroup = (age) => {
 };
 
 const OpConsBilling = () => {
-  const fullName = `${samplePatient.title} ${samplePatient.firstName} ${samplePatient.middleName} ${samplePatient.lastName}`;
+  const fullName = `${samplePatient.title || ""} ${samplePatient.firstName || ""} ${samplePatient.middleName || ""} ${samplePatient.lastName || ""}`.trim();
   const age = calculateAge(samplePatient.dob);
   const ageGroup = getAgeGroup(age);
+  const corporateIdentifierLabel = ["lou", "lpo", "membership"].some((token) =>
+    samplePatient.corporateName?.toLowerCase().includes(token)
+  )
+    ? "Staff ID"
+    : "Member No";
 
   return (
     <motion.div
@@ -105,6 +98,22 @@ const OpConsBilling = () => {
               <p className="text-[9px] uppercase tracking-[0.24em] text-slate-400">Payment</p>
               <p className="mt-1 text-sm font-semibold text-slate-900">{samplePatient.paymentCategory}</p>
             </div>
+            {samplePatient.paymentCategory === "Corporate" && (
+              <>
+                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-slate-400">Corporate Account</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{samplePatient.corporateName}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-slate-400">{corporateIdentifierLabel}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{samplePatient.corporateAccountNumber}</p>
+                </div>
+                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-slate-400">Contact Person</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{samplePatient.corporateContactPerson}</p>
+                </div>
+              </>
+            )}
             <div className="rounded-3xl border border-slate-100 bg-slate-50 p-3">
               <p className="text-[9px] uppercase tracking-[0.24em] text-slate-400">Phone</p>
               <p className="mt-1 text-sm font-semibold text-slate-900">{samplePatient.phoneNumber}</p>

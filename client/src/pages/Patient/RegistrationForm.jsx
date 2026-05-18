@@ -79,6 +79,13 @@ const optionalEmail = z
     message: "Please enter a valid email address for the patient or leave blank",
   });
 
+const optionalDetail = z
+  .string()
+  .trim()
+  .max(100, "This field should not exceed 100 characters")
+  .optional()
+  .or(z.literal(""));
+
 const nameField = (label) =>
   z
     .string()
@@ -157,6 +164,19 @@ const patientSchema = z.object({
     .trim()
     .min(1, "Employer name is required (use 'N/A' or 'Self' if applicable)")
     .max(100, "Employer name should not exceed 100 characters"),
+  cashPayerName: optionalDetail,
+  cashReceiptNumber: optionalDetail,
+  insuranceProviderName: optionalDetail,
+  insuranceSchemeName: optionalDetail,
+  insuranceMemberNumber: optionalDetail,
+  insuranceCoverEndDate: optionalDetail,
+  nhifNumber: optionalDetail,
+  nhifEmployer: optionalDetail,
+  nhifCoverType: optionalDetail,
+  nhifExpiryDate: optionalDetail,
+  corporateName: optionalDetail,
+  corporateAccountNumber: optionalDetail,
+  corporateContactPerson: optionalDetail,
 
   // NOK validation
   nokSurname: nameField("Next of kin surname"),
@@ -193,6 +213,95 @@ const patientSchema = z.object({
   emergencyRelationship: requiredSelect("Relationship"),
   emergencyPhone: friendlyPhone,
   alternateEmergencyPhone: optionalPhone,
+}).superRefine((values, ctx) => {
+  if (values.paymentCategory === "Cash") {
+    if (!values.cashPayerName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cashPayerName"],
+        message: "Cash payer name is required for cash payments",
+      });
+    }
+    if (!values.cashReceiptNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cashReceiptNumber"],
+        message: "Phone number is required for cash payments",
+      });
+    }
+  } else if (values.paymentCategory === "Insurance") {
+    if (!values.insuranceProviderName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["insuranceProviderName"],
+        message: "Insurance provider name is required for insurance payments",
+      });
+    }
+    if (!values.insuranceSchemeName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["insuranceSchemeName"],
+        message: "Scheme name is required for insurance payments",
+      });
+    }
+    if (!values.insuranceMemberNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["insuranceMemberNumber"],
+        message: "Member number is required for insurance payments",
+      });
+    }
+    if (!values.insuranceCoverEndDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["insuranceCoverEndDate"],
+        message: "Cover end date is required for insurance payments",
+      });
+    }
+  } else if (values.paymentCategory === "NHIF") {
+    if (!values.nhifNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["nhifNumber"],
+        message: "CR No. is required for SHA payments",
+      });
+    }
+    if (!values.nhifCoverType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["nhifCoverType"],
+        message: "Cover type is required for SHA payments",
+      });
+    }
+    if (!values.nhifExpiryDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["nhifExpiryDate"],
+        message: "Expiry date is required for SHA payments",
+      });
+    }
+  } else if (values.paymentCategory === "Corporate") {
+    if (!values.corporateName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["corporateName"],
+        message: "Corporate account name is required for corporate payments",
+      });
+    }
+    if (!values.corporateAccountNumber) {
+      const corporateAccountNumberLabel = ["lou", "lpo", "membership"].some((token) =>
+        values.corporateName?.trim().toLowerCase().includes(token)
+      )
+        ? "Staff ID"
+        : "Member No";
+
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["corporateAccountNumber"],
+        message: `${corporateAccountNumberLabel} is required for corporate payments`,
+      });
+    }
+  }
 });
 
 /** Map every validated field to the tab it lives on (for jump-to-error). */
@@ -215,8 +324,21 @@ const FIELD_TAB = {
   village: "Demography & Contact Details",
   physicalAddress: "Demography & Contact Details",
   patientCategory: "Demography & Contact Details",
-  paymentCategory: "Demography & Contact Details",
+  paymentCategory: "Payer Details",
   employer: "Demography & Contact Details",
+  cashPayerName: "Payer Details",
+  cashReceiptNumber: "Payer Details",
+  insuranceProviderName: "Payer Details",
+  insuranceSchemeName: "Payer Details",
+  insuranceMemberNumber: "Payer Details",
+  insuranceCoverEndDate: "Payer Details",
+  nhifNumber: "Payer Details",
+  nhifEmployer: "Payer Details",
+  nhifCoverType: "Payer Details",
+  nhifExpiryDate: "Payer Details",
+  corporateName: "Payer Details",
+  corporateAccountNumber: "Payer Details",
+  corporateContactPerson: "Payer Details",
   nokSurname: "NOK & Emergency Contact",
   nokFirstName: "NOK & Emergency Contact",
   nokOtherName: "NOK & Emergency Contact",
@@ -397,6 +519,25 @@ const PatientRegistration = () => {
   const [patientCategory, setPatientCategory] = useState("General");
   const [paymentCategory, setPaymentCategory] = useState("");
   const [employer, setEmployer] = useState("");
+  const [cashPayerName, setCashPayerName] = useState("");
+  const [cashReceiptNumber, setCashReceiptNumber] = useState("");
+  const [insuranceProviderName, setInsuranceProviderName] = useState("");
+  const [insuranceSchemeName, setInsuranceSchemeName] = useState("");
+  const [insuranceMemberNumber, setInsuranceMemberNumber] = useState("");
+  const [insuranceCoverEndDate, setInsuranceCoverEndDate] = useState("");
+  const [nhifNumber, setNhifNumber] = useState("");
+  const [nhifEmployer, setNhifEmployer] = useState("");
+  const [nhifCoverType, setNhifCoverType] = useState("");
+  const [nhifExpiryDate, setNhifExpiryDate] = useState("");
+  const [corporateName, setCorporateName] = useState("");
+  const [corporateAccountNumber, setCorporateAccountNumber] = useState("");
+  const [corporateContactPerson, setCorporateContactPerson] = useState("");
+
+  const isDebtorsCorporateAccount =
+    ["lou", "lpo", "membership"].some((token) =>
+      corporateName.trim().toLowerCase().includes(token)
+    );
+  const corporateAccountLabel = isDebtorsCorporateAccount ? "Staff ID" : "Member No";
 
   // --- Search ---
   const [searchTerm, setSearchTerm] = useState("");
@@ -458,6 +599,21 @@ const PatientRegistration = () => {
       patientCategory,
       paymentCategory,
       employer,
+      cashPayerName,
+      cashReceiptNumber,
+      insuranceProviderName,
+      insuranceSchemeName,
+      insuranceMemberNumber,
+      insuranceCoverEndDate,
+      nhifNumber,
+      nhifEmployer,
+      nhifCoverType,
+      nhifExpiryDate,
+      nhifCoverType,
+      nhifExpiryDate,
+      corporateName,
+      corporateAccountNumber,
+      corporateContactPerson,
       nokSurname,
       nokFirstName,
       nokOtherName,
@@ -501,6 +657,17 @@ const PatientRegistration = () => {
     patientCategory,
     paymentCategory,
     employer,
+    cashPayerName,
+    cashReceiptNumber,
+    insuranceProviderName,
+    insuranceSchemeName,
+    insuranceMemberNumber,
+    insuranceCoverEndDate,
+    nhifNumber,
+    nhifEmployer,
+    corporateName,
+    corporateAccountNumber,
+    corporateContactPerson,
     nokSurname,
     nokFirstName,
     nokOtherName,
@@ -522,12 +689,14 @@ const PatientRegistration = () => {
 
   const sectionTabs = [
     "Demography & Contact Details",
+    "Payer Details",
     "NOK & Emergency Contact",
     "Administrative Details",
   ];
 
   const sectionTabIcons = {
     "Demography & Contact Details": IdCard,
+    "Payer Details": CircleDollarSign,
     "NOK & Emergency Contact": Users,
     "Administrative Details": Building2,
   };
@@ -535,6 +704,8 @@ const PatientRegistration = () => {
   const sectionDescriptions = {
     "Demography & Contact Details":
       "Capture statutory identity attributes and patient communication channels used for matching, outreach, and follow-up.",
+    "Payer Details":
+      "Select the payment category and enter the correct payer details for cash, insurance, SHA, or corporate billing.",
     "NOK & Emergency Contact":
       "Record next of kin and emergency contacts for consent workflows, escalation paths, and urgent communication.",
     "Administrative Details":
@@ -709,6 +880,19 @@ const PatientRegistration = () => {
     setPatientCategory(patient.patientCategory || "General");
     setPaymentCategory(patient.paymentCategory || "");
     setEmployer(patient.employer || "");
+    setCashPayerName(patient.payerDetails?.cashPayerName || "");
+    setCashReceiptNumber(patient.payerDetails?.cashReceiptNumber || "");
+    setInsuranceProviderName(patient.payerDetails?.insuranceProviderName || "");
+    setInsuranceSchemeName(patient.payerDetails?.insuranceSchemeName || "");
+    setInsuranceMemberNumber(patient.payerDetails?.insuranceMemberNumber || "");
+    setInsuranceCoverEndDate(patient.payerDetails?.insuranceCoverEndDate || "");
+    setNhifNumber(patient.payerDetails?.nhifNumber || "");
+    setNhifEmployer(patient.payerDetails?.nhifEmployer || "");
+    setNhifCoverType(patient.payerDetails?.nhifCoverType || "");
+    setNhifExpiryDate(patient.payerDetails?.nhifExpiryDate || "");
+    setCorporateName(patient.payerDetails?.corporateName || "");
+    setCorporateAccountNumber(patient.payerDetails?.corporateAccountNumber || "");
+    setCorporateContactPerson(patient.payerDetails?.corporateContactPerson || "");
     setReligion(patient.religion || "");
     
     if (patient.nok) {
@@ -823,6 +1007,19 @@ const PatientRegistration = () => {
     setPatientCategory("General");
     setPaymentCategory("");
     setEmployer("");
+    setCashPayerName("");
+    setCashReceiptNumber("");
+    setInsuranceProviderName("");
+    setInsuranceSchemeName("");
+    setInsuranceMemberNumber("");
+    setInsuranceCoverEndDate("");
+    setNhifNumber("");
+    setNhifEmployer("");
+    setNhifCoverType("");
+    setNhifExpiryDate("");
+    setCorporateName("");
+    setCorporateAccountNumber("");
+    setCorporateContactPerson("");
 
     // Search
     setSearchTerm("");
@@ -914,6 +1111,21 @@ const PatientRegistration = () => {
         patientCategory,
         paymentCategory,
         employer,
+        payerDetails: {
+          cashPayerName,
+          cashReceiptNumber,
+          insuranceProviderName,
+          insuranceSchemeName,
+          insuranceMemberNumber,
+          insuranceCoverEndDate,
+          nhifNumber,
+          nhifEmployer,
+          nhifCoverType,
+          nhifExpiryDate,
+          corporateName,
+          corporateAccountNumber,
+          corporateContactPerson,
+        },
         nok: {
           surname: nokSurname,
           firstName: nokFirstName,
@@ -976,6 +1188,7 @@ const PatientRegistration = () => {
   const tabErrorCounts = useMemo(() => {
     const counts = {
       "Demography & Contact Details": 0,
+      "Payer Details": 0,
       "NOK & Emergency Contact": 0,
       "Administrative Details": 0,
     };
@@ -1604,23 +1817,6 @@ const PatientRegistration = () => {
               <option value="Private">Private</option>
               <option value="Private-Hospital">Private-Hospital</option>
             </SelectField>
-            <SelectField
-              id="payment-category"
-              label="Payment Category"
-              leftIcon={CircleDollarSign}
-              required
-              value={paymentCategory}
-              onChange={(e) => setPaymentCategory(e.target.value)}
-              error={errorFor("paymentCategory")}
-              onBlur={markTouched("paymentCategory")}
-            >
-              <option value="">-- Payment Category --</option>
-              <option value="Cash">Cash</option>
-              <option value="Insurance">Insurance</option>
-              <option value="NHIF">NHIF</option>
-              <option value="Corporate">Corporate</option>
-            </SelectField>
-
             <Input
               label="Employer"
               placeholder="Employer Name"
@@ -1649,6 +1845,163 @@ const PatientRegistration = () => {
               disabled
               leftIcon={<CalendarDays className="size-4" />}
             />
+          </>
+        ) : null}
+
+        {activeTab === "Payer Details" ? (
+          <>
+            <SelectField
+              id="payment-category"
+              label="Payment Category"
+              leftIcon={CircleDollarSign}
+              required
+              value={paymentCategory}
+              onChange={(e) => setPaymentCategory(e.target.value)}
+              error={errorFor("paymentCategory")}
+              onBlur={markTouched("paymentCategory")}
+            >
+              <option value="">-- Payment Category --</option>
+              <option value="Cash">Cash</option>
+              <option value="Insurance">Insurance</option>
+              <option value="NHIF">SHA</option>
+              <option value="Corporate">Corporate</option>
+            </SelectField>
+
+            {paymentCategory === "Cash" ? (
+              <>
+                <Input
+                  label="Payer Name"
+                  placeholder="Name of the payer"
+                  value={cashPayerName}
+                  onChange={(e) => setCashPayerName(e.target.value)}
+                  onBlur={markTouched("cashPayerName")}
+                  error={errorFor("cashPayerName")}
+                  maxLength={100}
+                  leftIcon={<User className="size-4" />}
+                />
+                <Input
+                  label="Phone Number"
+                  placeholder="Payer phone number"
+                  value={cashReceiptNumber}
+                  onChange={(e) => setCashReceiptNumber(e.target.value)}
+                  onBlur={markTouched("cashReceiptNumber")}
+                  error={errorFor("cashReceiptNumber")}
+                  maxLength={100}
+                  leftIcon={<Copy className="size-4" />}
+                />
+              </>
+            ) : paymentCategory === "Insurance" ? (
+              <>
+                <Input
+                  label="Insurance Provider Name"
+                  placeholder="Insurance provider"
+                  value={insuranceProviderName}
+                  onChange={(e) => setInsuranceProviderName(e.target.value)}
+                  onBlur={markTouched("insuranceProviderName")}
+                  error={errorFor("insuranceProviderName")}
+                  maxLength={100}
+                  leftIcon={<Shield className="size-4" />}
+                />
+                <Input
+                  label="Scheme Name"
+                  placeholder="Insurance scheme name"
+                  value={insuranceSchemeName}
+                  onChange={(e) => setInsuranceSchemeName(e.target.value)}
+                  onBlur={markTouched("insuranceSchemeName")}
+                  error={errorFor("insuranceSchemeName")}
+                  maxLength={100}
+                  leftIcon={<Copy className="size-4" />}
+                />
+                <Input
+                  label="Member Number"
+                  placeholder="Insurance member number"
+                  value={insuranceMemberNumber}
+                  onChange={(e) => setInsuranceMemberNumber(e.target.value)}
+                  onBlur={markTouched("insuranceMemberNumber")}
+                  error={errorFor("insuranceMemberNumber")}
+                  maxLength={100}
+                  leftIcon={<User className="size-4" />}
+                />
+                <Input
+                  label="Cover End Date"
+                  type="date"
+                  value={insuranceCoverEndDate}
+                  onChange={(e) => setInsuranceCoverEndDate(e.target.value)}
+                  onBlur={markTouched("insuranceCoverEndDate")}
+                  error={errorFor("insuranceCoverEndDate")}
+                  leftIcon={<CalendarDays className="size-4" />}
+                />
+              </>
+            ) : paymentCategory === "NHIF" ? (
+              <>
+                <Input
+                  label="CR No."
+                  placeholder="SHA membership number"
+                  value={nhifNumber}
+                  onChange={(e) => setNhifNumber(e.target.value)}
+                  onBlur={markTouched("nhifNumber")}
+                  error={errorFor("nhifNumber")}
+                  maxLength={100}
+                  leftIcon={<Shield className="size-4" />}
+                />
+                <Input
+                  label="Cover Type"
+                  placeholder="Type of cover"
+                  value={nhifCoverType}
+                  onChange={(e) => setNhifCoverType(e.target.value)}
+                  onBlur={markTouched("nhifCoverType")}
+                  error={errorFor("nhifCoverType")}
+                  maxLength={100}
+                  leftIcon={<BriefcaseBusiness className="size-4" />}
+                />
+                <Input
+                  label="Expiry Date"
+                  type="date"
+                  value={nhifExpiryDate}
+                  onChange={(e) => setNhifExpiryDate(e.target.value)}
+                  onBlur={markTouched("nhifExpiryDate")}
+                  error={errorFor("nhifExpiryDate")}
+                  leftIcon={<CalendarDays className="size-4" />}
+                />
+              </>
+            ) : paymentCategory === "Corporate" ? (
+              <>
+                <Input
+                  label="Corporate Account Name"
+                  placeholder="Corporate payer name"
+                  value={corporateName}
+                  onChange={(e) => setCorporateName(e.target.value)}
+                  onBlur={markTouched("corporateName")}
+                  error={errorFor("corporateName")}
+                  maxLength={100}
+                  leftIcon={<Building2 className="size-4" />}
+                />
+                <Input
+                  label={corporateAccountLabel}
+                  placeholder={corporateAccountLabel}
+                  value={corporateAccountNumber}
+                  onChange={(e) => setCorporateAccountNumber(e.target.value)}
+                  onBlur={markTouched("corporateAccountNumber")}
+                  error={errorFor("corporateAccountNumber")}
+                  maxLength={100}
+                  leftIcon={<Copy className="size-4" />}
+                />
+                <Input
+                  label="Corporate Contact Person"
+                  placeholder="Contact person"
+                  value={corporateContactPerson}
+                  onChange={(e) => setCorporateContactPerson(e.target.value)}
+                  onBlur={markTouched("corporateContactPerson")}
+                  error={errorFor("corporateContactPerson")}
+                  maxLength={100}
+                  leftIcon={<UserRound className="size-4" />}
+                />
+              </>
+            ) : (
+              <div className="sm:col-span-2 xl:col-span-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                Select a payment category to show the matching payer details fields.
+              </div>
+            )}
           </>
         ) : null}
 
