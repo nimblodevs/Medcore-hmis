@@ -10,6 +10,7 @@ const OpConsBilling = lazy(() => import("./Finance/OpConsBilling"));
 const Debtors = lazy(() => import("./Finance/Debtors"));
 const Schemes = lazy(() => import("./Finance/Schemes"));
 const Invoices = lazy(() => import("./Finance/Invoices"));
+const CreditPayments = lazy(() => import("./Finance/CreditPayments"));
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
@@ -33,6 +34,7 @@ const HMS = () => {
     if (path === "/finance/debtors") return "debtors";
     if (path === "/finance/schemes") return "schemes";
     if (path === "/finance/invoices") return "invoices";
+    if (path === "/finance/credit-payments") return "credit_payments";
     if (path === "/dashboard") return "dashboard";
     return "patients";
   };
@@ -44,6 +46,7 @@ const HMS = () => {
     else if (page === "debtors") navigate("/finance/debtors");
     else if (page === "schemes") navigate("/finance/schemes");
     else if (page === "invoices") navigate("/finance/invoices");
+    else if (page === "credit_payments") navigate("/finance/credit-payments");
     else if (page === "dashboard") navigate("/dashboard");
     setIsSidebarOpen(false);
   };
@@ -72,6 +75,7 @@ const HMS = () => {
                 <Route path="/finance/debtors" element={<Debtors />} />
                 <Route path="/finance/schemes" element={<Schemes />} />
                 <Route path="/finance/invoices" element={<Invoices />} />
+                <Route path="/finance/credit-payments" element={<CreditPayments />} />
                 <Route path="/dashboard" element={
                   <div className="flex h-full items-center justify-center py-20">
                     <div className="text-center">

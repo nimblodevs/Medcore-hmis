@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Receipt,
   FileText,
+  CreditCard,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -246,7 +247,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["op_cons_billing", "debtors", "schemes", "invoices"].includes(activePage)}
+              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -277,6 +278,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "invoices"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("invoices")}
+              />
+              <SidebarItem
+                icon={CreditCard}
+                label="Credit Payments"
+                active={activePage === "credit_payments"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("credit_payments")}
               />
             </SidebarDropdown>
 
