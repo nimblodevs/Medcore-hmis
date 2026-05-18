@@ -11,7 +11,10 @@ import {
   HelpCircle,
   Activity,
   HeartPulse,
-  Database
+  Database,
+  Building2,
+  ShieldCheck,
+  Receipt,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -153,7 +156,9 @@ const SidebarDropdown = ({ icon: Icon, label, active, isOpen, onToggle, children
 
 const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
   const [patientsMenuOpen, setPatientsMenuOpen] = useState(true);
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
+  const [financeMenuOpen, setFinanceMenuOpen] = useState(
+    ["op_cons_billing", "debtors", "schemes"].includes(activePage) ? true : true
+  );
 
   return (
     <>
@@ -240,16 +245,30 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={activePage === "finance" || activePage === "op_cons_billing"}
+              active={["op_cons_billing", "debtors", "schemes"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
               <SidebarItem
-                icon={ClipboardList}
+                icon={Receipt}
                 label="OP Cons Billing"
                 active={activePage === "op_cons_billing"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("op_cons_billing")}
+              />
+              <SidebarItem
+                icon={Building2}
+                label="Debtors"
+                active={activePage === "debtors"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("debtors")}
+              />
+              <SidebarItem
+                icon={ShieldCheck}
+                label="Schemes"
+                active={activePage === "schemes"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("schemes")}
               />
             </SidebarDropdown>
 
