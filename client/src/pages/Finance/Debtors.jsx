@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Building2, Plus, Search, X, ChevronRight, Phone, Mail,
   MapPin, User, CreditCard, AlertCircle, CheckCircle2,
-  Ban, Eye, Edit2, TrendingUp, Wallet, FileText,
+  Ban, Eye, Edit2, TrendingUp, Wallet, FileText, Clock,
 } from "lucide-react";
 import { mockProviders } from "../../constants/mockDebtors";
 
@@ -37,6 +37,15 @@ const generateAccountNumber = () => {
   return `ACC-${year}-${seq}`;
 };
 
+const CREDIT_PERIOD_OPTIONS = [14, 30, 45, 60, 90, 120];
+
+const creditPeriodStyle = (days) => {
+  if (days <= 30)  return "bg-emerald-100 text-emerald-700";
+  if (days <= 60)  return "bg-amber-100 text-amber-700";
+  if (days <= 90)  return "bg-orange-100 text-orange-700";
+  return "bg-red-100 text-red-600";
+};
+
 const EMPTY_FORM = {
   providerName: "",
   providerType: "Insurance",
@@ -46,6 +55,7 @@ const EMPTY_FORM = {
   email: "",
   address: "",
   creditLimit: "",
+  creditPeriod: "30",
   status: "Active",
 };
 
@@ -167,6 +177,7 @@ const Debtors = () => {
       id: `PRV-${String(providers.length + 1).padStart(3, "0")}`,
       accountNumber: generateAccountNumber(),
       creditLimit: Number(form.creditLimit),
+      creditPeriod: Number(form.creditPeriod),
       outstandingBalance: 0,
       accountOpenDate: new Date().toISOString().split("T")[0],
       schemes: [],
@@ -181,7 +192,9 @@ const Debtors = () => {
     const errors = validate();
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
     setProviders((prev) =>
-      prev.map((p) => p.id === editProvider.id ? { ...p, ...form, creditLimit: Number(form.creditLimit) } : p)
+      prev.map((p) => p.id === editProvider.id
+        ? { ...p, ...form, creditLimit: Number(form.creditLimit), creditPeriod: Number(form.creditPeriod) }
+        : p)
     );
     setEditProvider(null);
     setForm(EMPTY_FORM);
@@ -198,6 +211,7 @@ const Debtors = () => {
       email: provider.email,
       address: provider.address,
       creditLimit: String(provider.creditLimit),
+      creditPeriod: String(provider.creditPeriod ?? 30),
       status: provider.status,
     });
     setFormErrors({});
@@ -234,6 +248,28 @@ const Debtors = () => {
         <div>
           <InputField label="Credit Limit (KES)" name="creditLimit" type="number" value={form.creditLimit} onChange={handleFormChange} required placeholder="e.g. 500000" prefix="KES" />
           {formErrors.creditLimit && <p className="mt-1 text-xs text-red-500">{formErrors.creditLimit}</p>}
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            Credit Period <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {CREDIT_PERIOD_OPTIONS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, creditPeriod: String(days) }))}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                  form.creditPeriod === String(days)
+                    ? "border-cyan-400 bg-cyan-600 text-white shadow-sm"
+                    : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white"
+                }`}
+              >
+                <Clock size={10} />
+                {days} days
+              </button>
+            ))}
+          </div>
         </div>
         <SelectField label="Account Status" name="status" value={form.status} onChange={handleFormChange} options={STATUS_OPTIONS} required />
       </div>
@@ -333,7 +369,7 @@ const Debtors = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  {["Account No.", "Provider Name", "Type", "Contact Person", "Outstanding", "Credit Limit", "Status", ""].map((h) => (
+                  {["Account No.", "Provider Name", "Type", "Contact Person", "Outstanding", "Credit Limit", "Credit Period", "Status", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">{h}</th>
                   ))}
                 </tr>
@@ -378,6 +414,12 @@ const Debtors = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3.5 text-sm font-semibold text-slate-700">{formatKES(provider.creditLimit)}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${creditPeriodStyle(provider.creditPeriod ?? 30)}`}>
+                          <Clock size={9} strokeWidth={2.5} />
+                          {provider.creditPeriod ?? 30} days
+                        </span>
+                      </td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${statusStyle[provider.status]}`}>
                           <StatusIcon size={10} />
@@ -446,6 +488,19 @@ const Debtors = () => {
                 <FieldBlock label="Registration Number" value={viewProvider.registrationNumber} />
                 <FieldBlock label="Account Opened" value={viewProvider.accountOpenDate} />
                 <FieldBlock label="Schemes Linked" value={viewProvider.schemes?.length || 0} />
+                <FieldBlock label="Credit Limit" value={formatKES(viewProvider.creditLimit)} />
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[9px] uppercase tracking-[0.22em] text-slate-400">Credit Period</p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${creditPeriodStyle(viewProvider.creditPeriod ?? 30)}`}>
+                      <Clock size={11} strokeWidth={2.5} />
+                      {viewProvider.creditPeriod ?? 30} days
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      payment due within {viewProvider.creditPeriod ?? 30} days of invoice
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div>
