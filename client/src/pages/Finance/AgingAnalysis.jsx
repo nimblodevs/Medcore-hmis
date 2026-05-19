@@ -28,18 +28,22 @@ const calcAge = (finalizedAt) => {
   return Math.max(0, Math.floor(diff / 86400000));
 };
 
-const getBucket = (age) => {
-  if (age <= 30) return "current";
-  if (age <= 60) return "d31_60";
-  if (age <= 90) return "d61_90";
+const getBucket = (age, creditPeriod = 30) => {
+  if (age <= creditPeriod) return "current";
+  const daysOverdue = age - creditPeriod;
+  if (daysOverdue <= 30) return "d31_60";
+  if (daysOverdue <= 60) return "d61_90";
   return "d90plus";
 };
 
+const getDaysPastDue = (age, creditPeriod = 30) =>
+  age > creditPeriod ? age - creditPeriod : 0;
+
 const BUCKETS = [
-  { key: "current", label: "0–30 Days",    sublabel: "Current",         color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", bar: "bg-emerald-500", cell: "text-emerald-700 bg-emerald-50",  dot: "bg-emerald-500" },
-  { key: "d31_60", label: "31–60 Days",   sublabel: "Overdue",         color: "text-amber-700",   bg: "bg-amber-50",    border: "border-amber-200",   bar: "bg-amber-400",   cell: "text-amber-700 bg-amber-50",    dot: "bg-amber-400" },
-  { key: "d61_90", label: "61–90 Days",   sublabel: "Warning",         color: "text-orange-700",  bg: "bg-orange-50",   border: "border-orange-200",  bar: "bg-orange-500",  cell: "text-orange-700 bg-orange-50",  dot: "bg-orange-500" },
-  { key: "d90plus",label: "90+ Days",     sublabel: "Critical",        color: "text-red-700",     bg: "bg-red-50",      border: "border-red-200",     bar: "bg-red-500",     cell: "text-red-700 bg-red-50",        dot: "bg-red-500" },
+  { key: "current", label: "Within Terms",       sublabel: "Within credit period", color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", bar: "bg-emerald-500", cell: "text-emerald-700 bg-emerald-50",  dot: "bg-emerald-500" },
+  { key: "d31_60", label: "1–30 Days Past Due",  sublabel: "Overdue",              color: "text-amber-700",   bg: "bg-amber-50",    border: "border-amber-200",   bar: "bg-amber-400",   cell: "text-amber-700 bg-amber-50",      dot: "bg-amber-400" },
+  { key: "d61_90", label: "31–60 Days Past Due", sublabel: "Warning",              color: "text-orange-700",  bg: "bg-orange-50",   border: "border-orange-200",  bar: "bg-orange-500",  cell: "text-orange-700 bg-orange-50",    dot: "bg-orange-500" },
+  { key: "d90plus",label: "60+ Days Past Due",   sublabel: "Critical",             color: "text-red-700",     bg: "bg-red-50",      border: "border-red-200",     bar: "bg-red-500",     cell: "text-red-700 bg-red-50",          dot: "bg-red-500" },
 ];
 
 const TYPE_CFG = {
@@ -49,16 +53,16 @@ const TYPE_CFG = {
 };
 
 const ESCALATION_CFG = {
-  critical: { icon: Siren,          color: "bg-red-100 text-red-700 border-red-200",       label: "Critical — 90+ days" },
-  warning:  { icon: AlertTriangle,  color: "bg-orange-100 text-orange-700 border-orange-200", label: "Warning — 61–90 days" },
-  overdue:  { icon: AlertCircle,    color: "bg-amber-100 text-amber-700 border-amber-200",  label: "Overdue — 31–60 days" },
+  critical: { icon: Siren,          color: "bg-red-100 text-red-700 border-red-200",          label: "Critical — 60+ days past due" },
+  warning:  { icon: AlertTriangle,  color: "bg-orange-100 text-orange-700 border-orange-200", label: "Warning — 31–60 days past due" },
+  overdue:  { icon: AlertCircle,    color: "bg-amber-100 text-amber-700 border-amber-200",    label: "Overdue — 1–30 days past due" },
 };
 
 const SORT_OPTIONS = [
   { key: "total_desc",   label: "Total (High → Low)" },
   { key: "total_asc",    label: "Total (Low → High)" },
-  { key: "d90plus_desc", label: "90+ Days (Critical first)" },
-  { key: "d61_90_desc",  label: "61–90 Days (Warning first)" },
+  { key: "d90plus_desc", label: "60+ Days Past Due (Critical first)" },
+  { key: "d61_90_desc",  label: "31–60 Days Past Due (Warning first)" },
   { key: "name_asc",     label: "Provider Name (A–Z)" },
 ];
 
@@ -126,14 +130,18 @@ const AgingAnalysis = () => {
     creditInvoices.forEach((inv) => {
       const acc = inv.providerAccount;
       const age = calcAge(inv.finalizedAt);
-      const bucket = getBucket(age);
       const prov = mockProviders.find((p) => p.accountNumber === acc);
+      const creditPeriod = prov?.creditPeriod ?? 30;
+      const bucket = getBucket(age, creditPeriod);
+      const daysPastDue = getDaysPastDue(age, creditPeriod);
 
       if (!map[acc]) {
         map[acc] = {
           account: acc,
           providerName: prov?.providerName || inv.patient?.corporateName || "Unknown",
           providerType: prov?.providerType || inv.paymentMethod,
+          creditPeriod,
+          maxDaysPastDue: 0,
           current:  { invoices: [], total: 0 },
           d31_60:   { invoices: [], total: 0 },
           d61_90:   { invoices: [], total: 0 },
@@ -141,9 +149,10 @@ const AgingAnalysis = () => {
           total: 0,
         };
       }
-      map[acc][bucket].invoices.push({ ...inv, age });
+      map[acc][bucket].invoices.push({ ...inv, age, daysPastDue });
       map[acc][bucket].total += inv.grandTotal;
       map[acc].total += inv.grandTotal;
+      if (daysPastDue > map[acc].maxDaysPastDue) map[acc].maxDaysPastDue = daysPastDue;
     });
     return Object.values(map);
   }, [creditInvoices]);
@@ -197,7 +206,7 @@ const AgingAnalysis = () => {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900">Aging Analysis</h1>
           <p className="text-sm font-medium text-slate-500">
-            Outstanding credit invoices bucketed by days since finalization.
+            Outstanding credit invoices bucketed by days past each provider's agreed credit period.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm self-start">
@@ -231,8 +240,8 @@ const AgingAnalysis = () => {
                       <p className="text-xs font-bold leading-tight">{prov.providerName}</p>
                       <p className="text-[10px] opacity-80">
                         {level === "critical"
-                          ? `${formatKESFull(prov.d90plus.total)} overdue 90+ days`
-                          : `${formatKESFull(prov.d61_90.total)} overdue 61–90 days`}
+                          ? `${formatKESFull(prov.d90plus.total)} — 60+ days past ${prov.creditPeriod}-day term`
+                          : `${formatKESFull(prov.d61_90.total)} — 31–60 days past ${prov.creditPeriod}-day term`}
                       </p>
                     </div>
                   </div>
@@ -240,7 +249,7 @@ const AgingAnalysis = () => {
               })}
             </div>
             <p className="text-xs text-red-700 font-medium">
-              Recommended action: Issue formal demand letters and escalate to management for 90+ day accounts.
+              Recommended action: Issue formal demand letters and escalate to management for accounts 60+ days past their agreed credit period.
             </p>
           </motion.div>
         )}
@@ -249,11 +258,11 @@ const AgingAnalysis = () => {
       {/* Summary Stat Cards */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
         {[
-          { label: "Total Outstanding",  value: formatKESFull(summary.total),    sub: `${summary.invoiceCount} invoices · ${summary.providerCount} providers`, icon: TrendingDown, iconColor: "bg-slate-100 text-slate-600",    highlight: false },
-          { label: "0–30 Days",          value: formatKESFull(summary.current),  sub: "Current — within terms",       icon: CheckCircle2, iconColor: "bg-emerald-100 text-emerald-600", highlight: false },
-          { label: "31–60 Days",         value: formatKESFull(summary.d31_60),   sub: "Overdue — follow-up needed",   icon: Clock,        iconColor: "bg-amber-100 text-amber-600",     highlight: false },
-          { label: "61–90 Days",         value: formatKESFull(summary.d61_90),   sub: "Warning — escalate soon",     icon: AlertCircle,  iconColor: "bg-orange-100 text-orange-600",    highlight: summary.d61_90 > 0 },
-          { label: "90+ Days",           value: formatKESFull(summary.d90plus),  sub: "Critical — urgent action",    icon: Siren,        iconColor: "bg-red-100 text-red-600",          highlight: summary.d90plus > 0 },
+          { label: "Total Outstanding",       value: formatKESFull(summary.total),    sub: `${summary.invoiceCount} invoices · ${summary.providerCount} providers`, icon: TrendingDown, iconColor: "bg-slate-100 text-slate-600",    highlight: false },
+          { label: "Within Terms",            value: formatKESFull(summary.current),  sub: "Invoices within credit period",   icon: CheckCircle2, iconColor: "bg-emerald-100 text-emerald-600", highlight: false },
+          { label: "1–30 Days Past Due",      value: formatKESFull(summary.d31_60),   sub: "Overdue — follow-up needed",      icon: Clock,        iconColor: "bg-amber-100 text-amber-600",     highlight: false },
+          { label: "31–60 Days Past Due",     value: formatKESFull(summary.d61_90),   sub: "Warning — escalate soon",         icon: AlertCircle,  iconColor: "bg-orange-100 text-orange-600",   highlight: summary.d61_90 > 0 },
+          { label: "60+ Days Past Due",       value: formatKESFull(summary.d90plus),  sub: "Critical — urgent action",        icon: Siren,        iconColor: "bg-red-100 text-red-600",         highlight: summary.d90plus > 0 },
         ].map(({ label, value, sub, icon: Icon, iconColor, highlight }) => (
           <div key={label}
             className={`rounded-3xl border bg-white p-4 shadow-sm ${highlight ? "border-red-200 ring-1 ring-red-100" : "border-slate-200"}`}>
@@ -302,10 +311,16 @@ const AgingAnalysis = () => {
             <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
               <Info size={12} className="text-amber-600 shrink-0" />
               <p className="text-[10px] font-semibold text-amber-700">
-                {((totalNonCurrent / summary.total) * 100).toFixed(1)}% of outstanding invoices are past 30-day payment terms ({formatKESFull(totalNonCurrent)}).
+                {((totalNonCurrent / summary.total) * 100).toFixed(1)}% of outstanding balance ({formatKESFull(totalNonCurrent)}) exceeds each provider's agreed credit period.
               </p>
             </div>
           )}
+          <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+            <Info size={12} className="text-slate-400 shrink-0" />
+            <p className="text-[10px] font-semibold text-slate-500">
+              Aging buckets are relative to each provider's agreed credit period (e.g. Jubilee: 90 days, AAR: 60 days, Kenya Airways: 30 days). An invoice is only "past due" once it exceeds that provider's term.
+            </p>
+          </div>
         </div>
       )}
 
@@ -366,9 +381,22 @@ const AgingAnalysis = () => {
                         <td className="px-4 py-4">
                           <div>
                             <p className="text-xs font-bold text-slate-900 leading-tight">{prov.providerName}</p>
-                            <div className="mt-1 flex items-center gap-1.5">
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                               <TypeBadge type={prov.providerType} />
                               <span className="font-mono text-[9px] text-slate-400">{prov.account}</span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                                <Clock size={7} strokeWidth={2.5} />
+                                {prov.creditPeriod}d term
+                              </span>
+                              {prov.maxDaysPastDue > 0 && (
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${
+                                  prov.maxDaysPastDue > 60 ? "border-red-200 bg-red-50 text-red-700"
+                                  : prov.maxDaysPastDue > 30 ? "border-orange-200 bg-orange-50 text-orange-700"
+                                  : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}>
+                                  max {prov.maxDaysPastDue}d past due
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -435,7 +463,7 @@ const AgingAnalysis = () => {
                               <table className="w-full">
                                 <thead>
                                   <tr className="border-b border-slate-100">
-                                    {["Invoice No.", "Patient", "UHID", "Finalized", "Age (Days)", "Bucket", "Amount"].map((h) => (
+                                    {["Invoice No.", "Patient", "UHID", "Finalized", "Age", "Past Due", "Bucket", "Amount"].map((h) => (
                                       <th key={h} className="px-3 py-2 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">{h}</th>
                                     ))}
                                   </tr>
@@ -448,18 +476,22 @@ const AgingAnalysis = () => {
                                         <td className="px-3 py-2.5 text-xs font-medium text-slate-900">{inv.patient?.name}</td>
                                         <td className="px-3 py-2.5 font-mono text-[10px] text-slate-400">{inv.patient?.uhid}</td>
                                         <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">{formatDate(inv.finalizedAt)}</td>
+                                        <td className="px-3 py-2.5 text-[10px] text-slate-500 font-mono">{inv.age}d</td>
                                         <td className="px-3 py-2.5">
-                                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                            b.key === "current" ? "bg-emerald-100 text-emerald-700"
-                                            : b.key === "d31_60" ? "bg-amber-100 text-amber-700"
-                                            : b.key === "d61_90" ? "bg-orange-100 text-orange-700"
-                                            : "bg-red-100 text-red-700"
-                                          }`}>
-                                            {inv.age} days
-                                          </span>
+                                          {inv.daysPastDue > 0 ? (
+                                            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                                              b.key === "d31_60" ? "bg-amber-100 text-amber-700"
+                                              : b.key === "d61_90" ? "bg-orange-100 text-orange-700"
+                                              : "bg-red-100 text-red-700"
+                                            }`}>
+                                              +{inv.daysPastDue}d
+                                            </span>
+                                          ) : (
+                                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-700">on time</span>
+                                          )}
                                         </td>
                                         <td className="px-3 py-2.5">
-                                          <span className={`text-[9px] font-bold uppercase ${b.color}`}>{b.label}</span>
+                                          <span className={`text-[9px] font-bold uppercase ${b.color}`}>{b.sublabel}</span>
                                         </td>
                                         <td className="px-3 py-2.5 text-xs font-bold text-slate-900 whitespace-nowrap">{formatKESFull(inv.grandTotal)}</td>
                                       </tr>
