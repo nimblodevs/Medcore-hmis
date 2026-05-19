@@ -18,6 +18,7 @@ import {
   FileText,
   CreditCard,
   Send,
+  BarChart3,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -248,7 +249,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches"].includes(activePage)}
+              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "aging_analysis"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -293,6 +294,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "dispatches"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("dispatches")}
+              />
+              <SidebarItem
+                icon={BarChart3}
+                label="Aging Analysis"
+                active={activePage === "aging_analysis"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("aging_analysis")}
               />
             </SidebarDropdown>
 
