@@ -249,10 +249,17 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "aging_analysis"].includes(activePage)}
+              active={["finance_dashboard", "op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "aging_analysis"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={activePage === "finance_dashboard"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("finance_dashboard")}
+              />
               <SidebarItem
                 icon={Receipt}
                 label="OP Cons Billing"

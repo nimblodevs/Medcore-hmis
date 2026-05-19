@@ -13,6 +13,7 @@ const Invoices = lazy(() => import("./Finance/Invoices"));
 const CreditPayments = lazy(() => import("./Finance/CreditPayments"));
 const Dispatches = lazy(() => import("./Finance/Dispatches"));
 const AgingAnalysis = lazy(() => import("./Finance/AgingAnalysis"));
+const FinanceDashboard = lazy(() => import("./Finance/FinanceDashboard"));
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
@@ -32,6 +33,7 @@ const HMS = () => {
     const path = location.pathname;
     if (path === "/patients/register") return "patients";
     if (path === "/patients/list") return "patient_list";
+    if (path === "/finance/dashboard") return "finance_dashboard";
     if (path === "/finance/op-cons-billing") return "op_cons_billing";
     if (path === "/finance/debtors") return "debtors";
     if (path === "/finance/schemes") return "schemes";
@@ -46,6 +48,7 @@ const HMS = () => {
   const handlePageChange = (page) => {
     if (page === "patients") navigate("/patients/register");
     else if (page === "patient_list") navigate("/patients/list");
+    else if (page === "finance_dashboard") navigate("/finance/dashboard");
     else if (page === "op_cons_billing") navigate("/finance/op-cons-billing");
     else if (page === "debtors") navigate("/finance/debtors");
     else if (page === "schemes") navigate("/finance/schemes");
@@ -84,6 +87,7 @@ const HMS = () => {
                 <Route path="/finance/credit-payments" element={<CreditPayments />} />
                 <Route path="/finance/dispatches" element={<Dispatches />} />
                 <Route path="/finance/aging-analysis" element={<AgingAnalysis />} />
+                <Route path="/finance/dashboard" element={<FinanceDashboard />} />
                 <Route path="/dashboard" element={
                   <div className="flex h-full items-center justify-center py-20">
                     <div className="text-center">
