@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useCreditPaymentStore, generatePaymentId } from "../../store/creditPaymentStore";
-import { mockProviders } from "../../constants/mockDebtors";
+import { useDispatchStore } from "../../store/dispatchStore";
+import { mockProviders, mockSchemes } from "../../constants/mockDebtors";
 
 const formatKES = (v) =>
   `KES ${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -41,6 +42,27 @@ const METHOD_COLOR = {
   RTGS:          "bg-indigo-100 text-indigo-700",
   "Direct Debit":"bg-rose-100 text-rose-700",
   "M-Pesa":      "bg-emerald-100 text-emerald-700",
+};
+
+const getPaymentInvoiceAllocations = (payment) => {
+  if (payment.invoiceAllocations?.length) return payment.invoiceAllocations;
+  return (payment.invoiceIds || []).map((invoiceId) => ({
+    invoiceId,
+    patientName: "Historical invoice",
+    uhid: "—",
+    invoiceDate: payment.recordedAt,
+    amount: payment.invoiceCount ? payment.amount / payment.invoiceCount : payment.amount,
+  }));
+};
+
+const getProviderSchemeSummary = (providerAccount) => {
+  const provider = mockProviders.find((item) => item.accountNumber === providerAccount);
+  const schemes = (provider?.schemes || [])
+    .map((schemeId) => mockSchemes.find((scheme) => scheme.id === schemeId)?.schemeName)
+    .filter(Boolean);
+  if (!schemes.length) return "No scheme assigned";
+  if (schemes.length === 1) return schemes[0];
+  return `${schemes[0]} +${schemes.length - 1}`;
 };
 
 const TypeBadge = ({ type }) => {
@@ -100,6 +122,7 @@ const Modal = ({ title, subtitle, onClose, wide, children }) => (
 const CreditPayments = () => {
   const { invoices, updateInvoice } = useInvoiceStore();
   const { payments, addPayment } = useCreditPaymentStore();
+  const { dispatches } = useDispatchStore();
 
   const [activeTab, setActiveTab] = useState("outstanding");
   const [historySearch, setHistorySearch] = useState("");
@@ -126,6 +149,7 @@ const CreditPayments = () => {
           account: acc,
           providerName: prov?.providerName || inv.patient?.corporateName || "Unknown Provider",
           providerType: prov?.providerType || inv.paymentMethod,
+          schemeName: getProviderSchemeSummary(acc),
           creditLimit: prov?.creditLimit || 0,
           contactPerson: prov?.contactPerson || "—",
           email: prov?.email || "—",
@@ -153,17 +177,68 @@ const CreditPayments = () => {
     return { totalOutstanding, providersWithDebt, pendingInvoices, paidThisMonth };
   }, [creditInvoices, providerBalances, payments]);
 
+  const dispatchByInvoiceId = useMemo(() => {
+    const map = {};
+    dispatches.forEach((dispatch) => {
+      (dispatch.invoiceIds || []).forEach((invoiceId) => {
+        map[invoiceId] = dispatch;
+      });
+      (dispatch.invoiceSnapshots || []).forEach((invoice) => {
+        map[invoice.id] = dispatch;
+      });
+    });
+    return map;
+  }, [dispatches]);
+
   const filteredHistory = useMemo(() => {
     if (!historySearch.trim()) return payments;
     const q = historySearch.toLowerCase();
-    return payments.filter(
-      (p) =>
-        p.id.toLowerCase().includes(q) ||
-        p.providerName.toLowerCase().includes(q) ||
-        p.referenceNumber.toLowerCase().includes(q) ||
-        p.method.toLowerCase().includes(q)
+    return payments.filter((payment) =>
+      payment.id.toLowerCase().includes(q) ||
+      payment.providerName.toLowerCase().includes(q) ||
+      (payment.referenceNumber || "").toLowerCase().includes(q) ||
+      payment.method.toLowerCase().includes(q)
     );
   }, [payments, historySearch]);
+
+  const allocationRows = useMemo(() => {
+    const rows = payments.flatMap((payment) =>
+      getPaymentInvoiceAllocations(payment).map((allocation) => ({
+        ...allocation,
+        paymentId: payment.id,
+        providerAccount: payment.providerAccount,
+        providerName: payment.providerName,
+        providerType: payment.providerType,
+        method: payment.method,
+        referenceNumber: payment.referenceNumber || "—",
+        providerReference: dispatchByInvoiceId[allocation.invoiceId]?.referenceNumber || payment.providerReference || "—",
+        dispatchReference: dispatchByInvoiceId[allocation.invoiceId]?.id || payment.dispatchReference || "—",
+        schemeName: getProviderSchemeSummary(payment.providerAccount),
+        paidAt: payment.recordedAt,
+      }))
+    );
+    if (!historySearch.trim()) return rows;
+    const q = historySearch.toLowerCase();
+    return rows.filter((row) =>
+      row.paymentId.toLowerCase().includes(q) ||
+      row.providerName.toLowerCase().includes(q) ||
+      row.schemeName.toLowerCase().includes(q) ||
+      row.referenceNumber.toLowerCase().includes(q) ||
+      row.providerReference.toLowerCase().includes(q) ||
+      row.dispatchReference.toLowerCase().includes(q) ||
+      row.invoiceId.toLowerCase().includes(q) ||
+      row.patientName.toLowerCase().includes(q) ||
+      row.uhid.toLowerCase().includes(q)
+    );
+  }, [dispatchByInvoiceId, payments, historySearch]);
+
+  const allocationStats = useMemo(() => {
+    const totalPaidInvoices = allocationRows.length;
+    const totalAllocated = allocationRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const providersPaid = new Set(allocationRows.map((row) => row.providerAccount)).size;
+    const averageInvoicePaid = totalPaidInvoices ? totalAllocated / totalPaidInvoices : 0;
+    return { totalPaidInvoices, totalAllocated, providersPaid, averageInvoicePaid };
+  }, [allocationRows]);
 
   const handleOpenSettle = (provider) => {
     setSettleModal(provider);
@@ -206,7 +281,16 @@ const CreditPayments = () => {
       amount: selectedTotal,
       method: payForm.method,
       referenceNumber: payForm.reference.trim() || "—",
+      providerReference: payForm.reference.trim() || "—",
+      dispatchReference: "—",
       invoiceIds: settled.map((i) => i.id),
+      invoiceAllocations: settled.map((invoice) => ({
+        invoiceId: invoice.id,
+        patientName: invoice.patient?.name || "—",
+        uhid: invoice.patient?.uhid || "—",
+        invoiceDate: invoice.finalizedAt || invoice.createdAt,
+        amount: invoice.grandTotal,
+      })),
       invoiceCount: settled.length,
       notes: payForm.notes.trim(),
       recordedAt: new Date().toISOString(),
@@ -288,7 +372,7 @@ const CreditPayments = () => {
       <div className="flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm w-fit">
         {[
           { key: "outstanding", label: "Outstanding Accounts", count: stats.providersWithDebt },
-          { key: "history", label: "Payment History", count: payments.length },
+          { key: "reports", label: "Allocation Reports", count: allocationStats.totalPaidInvoices },
         ].map(({ key, label, count }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors ${activeTab === key ? "bg-cyan-600 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"}`}>
@@ -311,62 +395,51 @@ const CreditPayments = () => {
                 <p className="text-sm">No outstanding credit invoices at this time</p>
               </div>
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {providerBalances.map((prov) => {
-                  const cfg = TYPE_CONFIG[prov.providerType] || TYPE_CONFIG.Corporate;
-                  const Icon = cfg.icon;
-                  return (
-                    <motion.div key={prov.account} layout
-                      className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
-
-                      {/* Provider Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`flex size-10 shrink-0 items-center justify-center rounded-2xl ${cfg.color.split(" ").slice(0, 1).join(" ")} ${cfg.color.split(" ").slice(1, 2).join(" ")}`}>
-                            <Icon size={17} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-900 leading-tight truncate">{prov.providerName}</p>
-                            <p className="text-[10px] text-slate-400 font-mono">{prov.account}</p>
-                          </div>
-                        </div>
-                        <TypeBadge type={prov.providerType} />
-                      </div>
-
-                      {/* Outstanding Amount */}
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Outstanding Balance</p>
-                        <p className="text-xl font-black text-red-600">{formatKES(prov.total)}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{prov.invoices.length} invoice{prov.invoices.length !== 1 ? "s" : ""} pending settlement</p>
-                      </div>
-
-                      {/* Credit Bar */}
-                      <CreditBar used={prov.total} limit={prov.creditLimit} type={prov.providerType} />
-
-                      {/* Invoice mini-list */}
-                      <div className="space-y-1.5">
-                        {prov.invoices.slice(0, 3).map((inv) => (
-                          <div key={inv.id} className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <div className="size-1.5 rounded-full bg-amber-400 shrink-0" />
-                              <span className="font-mono text-slate-500 truncate">{inv.id}</span>
-                            </div>
-                            <span className="font-semibold text-slate-700 shrink-0">{formatKES(inv.grandTotal)}</span>
-                          </div>
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50">
+                        {["Provider", "Type", "Pending Invoices", "Oldest Invoice", "Outstanding Balance", "Credit Utilisation", "Action"].map((head) => (
+                          <th key={head} className="whitespace-nowrap px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">{head}</th>
                         ))}
-                        {prov.invoices.length > 3 && (
-                          <p className="text-[10px] text-slate-400 pl-3">+{prov.invoices.length - 3} more invoice{prov.invoices.length - 3 !== 1 ? "s" : ""}</p>
-                        )}
-                      </div>
-
-                      {/* Settle Button */}
-                      <button onClick={() => handleOpenSettle(prov)}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white hover:bg-cyan-700 transition-colors shadow-sm shadow-cyan-200">
-                        <Banknote size={15} /> Record Payment
-                      </button>
-                    </motion.div>
-                  );
-                })}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {providerBalances.map((prov) => {
+                        const oldestInvoice = [...prov.invoices].sort((a, b) => new Date(a.finalizedAt || a.createdAt) - new Date(b.finalizedAt || b.createdAt))[0];
+                        return (
+                          <tr key={prov.account} className="transition-colors hover:bg-slate-50/70">
+                            <td className="px-4 py-4">
+                              <p className="text-xs font-bold text-slate-900">{prov.providerName}</p>
+                              <p className="mt-0.5 max-w-[220px] truncate text-[10px] font-semibold text-cyan-700">{prov.schemeName}</p>
+                            </td>
+                            <td className="px-4 py-4"><TypeBadge type={prov.providerType} /></td>
+                            <td className="px-4 py-4">
+                              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                                {prov.invoices.length} invoice{prov.invoices.length !== 1 ? "s" : ""}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <p className="font-mono text-xs font-semibold text-slate-700">{oldestInvoice?.id}</p>
+                              <p className="text-[10px] text-slate-400">{formatDate(oldestInvoice?.finalizedAt || oldestInvoice?.createdAt)}</p>
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-4 text-sm font-black text-red-600">{formatKES(prov.total)}</td>
+                            <td className="min-w-[180px] px-4 py-4">
+                              <CreditBar used={prov.total} limit={prov.creditLimit} type={prov.providerType} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <button onClick={() => handleOpenSettle(prov)}
+                                className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 transition-colors hover:bg-cyan-700">
+                                <Banknote size={13} /> Record Payment
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </motion.div>
@@ -454,6 +527,96 @@ const CreditPayments = () => {
       )}
 
       {/* ─── SETTLE MODAL ─────────────────────────────────────────────────── */}
+      {/* ALLOCATION REPORTS TAB */}
+      {activeTab === "reports" && (
+        <AnimatePresence mode="wait">
+          <motion.div key="reports" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: "Paid Invoices", value: allocationStats.totalPaidInvoices, icon: FileText, color: "bg-cyan-100 text-cyan-700" },
+                { label: "Allocated Amount", value: formatKES(allocationStats.totalAllocated), icon: DollarSign, color: "bg-emerald-100 text-emerald-700" },
+                { label: "Providers Paid", value: allocationStats.providersPaid, icon: Building2, color: "bg-violet-100 text-violet-700" },
+                { label: "Average Per Invoice", value: formatKES(allocationStats.averageInvoicePaid), icon: Hash, color: "bg-amber-100 text-amber-700" },
+              ].map(({ label, value, icon: Icon, color }) => (
+                <div key={label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex size-10 shrink-0 items-center justify-center rounded-2xl ${color}`}>
+                      <Icon size={17} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-slate-500">{label}</p>
+                      <p className="mt-0.5 text-base font-black leading-tight text-slate-900">{value}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-black uppercase tracking-wide text-slate-900">Invoice Allocation History</h2>
+                <p className="mt-1 text-xs text-slate-500">Every paid credit invoice linked to its payment reference and provider.</p>
+              </div>
+              <div className="relative w-full sm:max-w-sm">
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search invoice, patient, provider, ref..."
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-colors focus:border-cyan-400"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+              {allocationRows.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                  <ReceiptText size={36} className="mb-2 opacity-20" />
+                  <p className="font-semibold text-slate-500">No paid invoice allocations found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50">
+                        {["Paid Date", "Invoice No.", "Patient", "UHID", "Provider", "Provider Reference", "Dispatch Reference", "Payment Reference Number", "Method", "Allocated Amount", "Payment ID"].map((h) => (
+                          <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {allocationRows.map((row) => (
+                        <tr key={`${row.paymentId}-${row.invoiceId}`} className="transition-colors hover:bg-slate-50/60">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500">{formatDate(row.paidAt)}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-700">{row.invoiceId}</td>
+                          <td className="px-4 py-3.5 text-xs font-semibold text-slate-900">{row.patientName}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs text-slate-500">{row.uhid}</td>
+                          <td className="px-4 py-3.5">
+                            <p className="text-xs font-semibold text-slate-900">{row.providerName}</p>
+                            <p className="max-w-[180px] truncate text-[10px] font-semibold text-cyan-700">{row.schemeName}</p>
+                          </td>
+                          <td className="px-4 py-3.5 font-mono text-xs text-slate-600">{row.providerReference}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs font-semibold text-cyan-700">{row.dispatchReference}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs text-slate-600">{row.referenceNumber}</td>
+                          <td className="px-4 py-3.5">
+                            <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${METHOD_COLOR[row.method] || "bg-slate-100 text-slate-600"}`}>
+                              {row.method}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-xs font-black text-emerald-700">{formatKES(row.amount)}</td>
+                          <td className="px-4 py-3.5 font-mono text-xs text-slate-500">{row.paymentId}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      )}
+
       <AnimatePresence>
         {settleModal && (
           <Modal
@@ -658,13 +821,27 @@ const CreditPayments = () => {
                 ))}
               </div>
 
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Invoice IDs Settled</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {viewPayment.invoiceIds.map((id) => (
-                    <span key={id} className="font-mono rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-600">{id}</span>
-                  ))}
-                </div>
+              <div className="overflow-hidden rounded-2xl border border-slate-200">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      {["Invoice", "Patient", "UHID", "Invoice Date", "Allocated"].map((head) => (
+                        <th key={head} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">{head}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {getPaymentInvoiceAllocations(viewPayment).map((allocation) => (
+                      <tr key={allocation.invoiceId}>
+                        <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-700">{allocation.invoiceId}</td>
+                        <td className="px-3 py-2 text-xs font-semibold text-slate-900">{allocation.patientName}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-slate-500">{allocation.uhid}</td>
+                        <td className="px-3 py-2 text-xs text-slate-500">{formatDate(allocation.invoiceDate)}</td>
+                        <td className="px-3 py-2 text-right text-xs font-bold text-emerald-700">{formatKES(allocation.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {viewPayment.notes && (

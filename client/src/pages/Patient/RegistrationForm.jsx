@@ -1423,6 +1423,7 @@ const PatientRegistration = () => {
           id="title"
           label="Name Prefix (Title)"
           leftIcon={UserRound}
+          containerClassName="max-w-44"
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}

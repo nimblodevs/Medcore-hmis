@@ -249,7 +249,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["finance_dashboard", "op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "aging_analysis"].includes(activePage)}
+              active={["finance_dashboard", "op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "insurance_claim_payments", "aging_analysis"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -301,6 +301,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "dispatches"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("dispatches")}
+              />
+              <SidebarItem
+                icon={CreditCard}
+                label="Claim Payments"
+                active={activePage === "insurance_claim_payments"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("insurance_claim_payments")}
               />
               <SidebarItem
                 icon={BarChart3}

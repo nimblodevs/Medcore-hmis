@@ -12,9 +12,9 @@ const seedDispatches = [
     phone: "0722 100 200",
     invoiceIds: ["INV-20260301-HIST1", "INV-20260310-HIST2", "INV-20260318-HIST3"],
     invoiceSnapshots: [
-      { id: "INV-20260301-HIST1", patientName: "Mr Peter Njoroge Kamau", uhid: "UHID-000180", finalizedAt: "2026-03-01T10:00:00", grandTotal: 28000, itemCount: 4, paymentMethod: "Insurance", notes: "" },
-      { id: "INV-20260310-HIST2", patientName: "Ms Jane Wanjiru Mwangi", uhid: "UHID-000190", finalizedAt: "2026-03-10T09:00:00", grandTotal: 35000, itemCount: 6, paymentMethod: "Insurance", notes: "Pre-auth ref: JBL-PRE-00190" },
-      { id: "INV-20260318-HIST3", patientName: "Mr Ali Hassan Osman",   uhid: "UHID-000195", finalizedAt: "2026-03-18T11:00:00", grandTotal: 22000, itemCount: 3, paymentMethod: "Insurance", notes: "" },
+      { id: "INV-20260301-HIST1", patientName: "Mr Peter Njoroge Kamau", uhid: "UHID-000180", schemeName: "Jubilee Gold Plan", memberNo: "JBL-180-G", finalizedAt: "2026-03-01T10:00:00", grandTotal: 28000, itemCount: 4, paymentMethod: "Insurance", notes: "" },
+      { id: "INV-20260310-HIST2", patientName: "Ms Jane Wanjiru Mwangi", uhid: "UHID-000190", schemeName: "Jubilee Silver Plan", memberNo: "JBL-190-S", finalizedAt: "2026-03-10T09:00:00", grandTotal: 35000, itemCount: 6, paymentMethod: "Insurance", notes: "Pre-auth ref: JBL-PRE-00190" },
+      { id: "INV-20260318-HIST3", patientName: "Mr Ali Hassan Osman",   uhid: "UHID-000195", schemeName: "Jubilee Gold Plan", memberNo: "JBL-195-G", finalizedAt: "2026-03-18T11:00:00", grandTotal: 22000, itemCount: 3, paymentMethod: "Insurance", notes: "" },
     ],
     totalAmount: 85000,
     invoiceCount: 3,
@@ -40,8 +40,8 @@ const seedDispatches = [
     phone: "0733 200 300",
     invoiceIds: ["INV-20260312-HIST4", "INV-20260325-HIST5"],
     invoiceSnapshots: [
-      { id: "INV-20260312-HIST4", patientName: "Ms Mary Auma Odhiambo", uhid: "UHID-000210", finalizedAt: "2026-03-12T13:00:00", grandTotal: 18500, itemCount: 3, paymentMethod: "Insurance", notes: "" },
-      { id: "INV-20260325-HIST5", patientName: "Mr John Mwenda Kithinji", uhid: "UHID-000218", finalizedAt: "2026-03-25T10:30:00", grandTotal: 24000, itemCount: 4, paymentMethod: "Insurance", notes: "Specialist referral" },
+      { id: "INV-20260312-HIST4", patientName: "Ms Mary Auma Odhiambo", uhid: "UHID-000210", schemeName: "AAR Executive Cover", memberNo: "AAR-210-EX", finalizedAt: "2026-03-12T13:00:00", grandTotal: 18500, itemCount: 3, paymentMethod: "Insurance", notes: "" },
+      { id: "INV-20260325-HIST5", patientName: "Mr John Mwenda Kithinji", uhid: "UHID-000218", schemeName: "AAR Executive Cover", memberNo: "AAR-218-EX", finalizedAt: "2026-03-25T10:30:00", grandTotal: 24000, itemCount: 4, paymentMethod: "Insurance", notes: "Specialist referral" },
     ],
     totalAmount: 42500,
     invoiceCount: 2,
@@ -67,8 +67,8 @@ const seedDispatches = [
     phone: "0722 400 500",
     invoiceIds: ["INV-20260401-HIST6", "INV-20260412-HIST7"],
     invoiceSnapshots: [
-      { id: "INV-20260401-HIST6", patientName: "Mr David Njoroge Wachira", uhid: "UHID-000241", finalizedAt: "2026-04-01T09:30:00", grandTotal: 55000, itemCount: 5, paymentMethod: "Corporate", notes: "Executive health screening" },
-      { id: "INV-20260412-HIST7", patientName: "Ms Ann Waithera Gichuki",  uhid: "UHID-000255", finalizedAt: "2026-04-12T11:00:00", grandTotal: 70000, itemCount: 7, paymentMethod: "Corporate", notes: "" },
+      { id: "INV-20260401-HIST6", patientName: "Mr David Njoroge Wachira", uhid: "UHID-000241", schemeName: "Safaricom Staff Medical", memberNo: "SCOM-241", finalizedAt: "2026-04-01T09:30:00", grandTotal: 55000, itemCount: 5, paymentMethod: "Corporate", notes: "Executive health screening" },
+      { id: "INV-20260412-HIST7", patientName: "Ms Ann Waithera Gichuki",  uhid: "UHID-000255", schemeName: "Safaricom Staff Medical", memberNo: "SCOM-255", finalizedAt: "2026-04-12T11:00:00", grandTotal: 70000, itemCount: 7, paymentMethod: "Corporate", notes: "" },
     ],
     totalAmount: 125000,
     invoiceCount: 2,
@@ -94,7 +94,7 @@ const seedDispatches = [
     phone: "0711 300 400",
     invoiceIds: ["INV-20260404-HIST8"],
     invoiceSnapshots: [
-      { id: "INV-20260404-HIST8", patientName: "Capt. Martin Oloo Adera", uhid: "UHID-000265", finalizedAt: "2026-04-04T14:00:00", grandTotal: 38200, itemCount: 3, paymentMethod: "Corporate", notes: "Annual aviation medical" },
+      { id: "INV-20260404-HIST8", patientName: "Capt. Martin Oloo Adera", uhid: "UHID-000265", schemeName: "KQ Staff Medical Scheme", memberNo: "KQ-265", finalizedAt: "2026-04-04T14:00:00", grandTotal: 38200, itemCount: 3, paymentMethod: "Corporate", notes: "Annual aviation medical" },
     ],
     totalAmount: 38200,
     invoiceCount: 1,

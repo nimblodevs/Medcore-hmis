@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useDispatchStore, generateDispatchId } from "../../store/dispatchStore";
-import { mockProviders } from "../../constants/mockDebtors";
+import { mockProviders, mockSchemes } from "../../constants/mockDebtors";
 
 const FACILITY = {
   name: "MediCore General Hospital",
@@ -45,6 +45,7 @@ const METHOD_COLOR = {
 };
 
 const TABS = ["All", "Draft", "Dispatched", "Acknowledged", "Settled", "Disputed"];
+const INVOICES_PER_DISPATCH_PAGE = 25;
 
 const formatKES = (v) => `KES ${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 const formatDate = (iso) => {
@@ -54,6 +55,46 @@ const formatDate = (iso) => {
 const formatDateTime = (iso) => {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("en-KE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+const getInvoiceSchemeName = (invoice, providerAccount) => {
+  const patient = invoice.patient || {};
+  if (invoice.schemeName) return invoice.schemeName;
+  if (patient.insuranceSchemeName) return patient.insuranceSchemeName;
+  if (patient.schemeName) return patient.schemeName;
+
+  const provider = mockProviders.find((p) => p.accountNumber === (invoice.providerAccount || providerAccount));
+  const scheme = mockSchemes.find((s) => s.id === provider?.schemes?.[0]);
+  return scheme?.schemeName || "—";
+};
+
+const getInvoiceMemberNo = (invoice) => {
+  const patient = invoice.patient || {};
+  return (
+    invoice.memberNo ||
+    patient.insuranceMemberNumber ||
+    patient.corporateAccountNumber ||
+    patient.memberNo ||
+    "—"
+  );
+};
+
+const getDispatchSchemeSummary = (dispatch) => {
+  const schemes = [...new Set((dispatch.invoiceSnapshots || [])
+    .map((invoice) => getInvoiceSchemeName(invoice, dispatch.providerAccount))
+    .filter((value) => value && value !== "â€”"))];
+  if (!schemes.length) return "â€”";
+  if (schemes.length === 1) return schemes[0];
+  return `${schemes[0]} +${schemes.length - 1}`;
+};
+
+const getDispatchMemberSummary = (dispatch) => {
+  const members = [...new Set((dispatch.invoiceSnapshots || [])
+    .map(getInvoiceMemberNo)
+    .filter((value) => value && value !== "â€”"))];
+  if (!members.length) return "â€”";
+  if (members.length === 1) return members[0];
+  return `${members.length} members`;
 };
 
 const StatusBadge = ({ status }) => {
@@ -127,30 +168,82 @@ const Modal = ({ title, subtitle, onClose, wide, children }) => (
 );
 
 const DispatchNote = ({ dispatch, onClose }) => {
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const today = new Date().toLocaleDateString("en-KE", { day: "2-digit", month: "long", year: "numeric" });
   const dispatchDate = dispatch.dispatchedAt ? formatDate(dispatch.dispatchedAt) : formatDate(dispatch.createdAt);
+  const invoicePages = [];
+  for (let i = 0; i < dispatch.invoiceSnapshots.length; i += INVOICES_PER_DISPATCH_PAGE) {
+    invoicePages.push(dispatch.invoiceSnapshots.slice(i, i + INVOICES_PER_DISPATCH_PAGE));
+  }
+  const totalPrintPages = 1 + invoicePages.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm print:static print:block print:bg-white print:p-0 print:backdrop-blur-none">
+      <style>
+        {`
+          @page {
+            size: A4;
+            margin: 0;
+          }
+
+          @media print {
+            html,
+            body {
+              width: 210mm;
+              min-height: 297mm;
+              overflow: visible;
+              background: white !important;
+            }
+
+            body * {
+              visibility: hidden;
+            }
+
+            .dispatch-note-print-area,
+            .dispatch-note-print-area * {
+              visibility: visible;
+            }
+
+            .dispatch-note-print-area {
+              position: absolute !important;
+              inset: 0 auto auto 0 !important;
+              width: 210mm !important;
+            }
+
+            .dispatch-note-page {
+              box-shadow: none !important;
+              break-after: page;
+              page-break-after: always;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+
+            .dispatch-note-page:last-child {
+              break-after: auto;
+              page-break-after: auto;
+            }
+          }
+        `}
+      </style>
       <motion.div
         initial={{ opacity: 0, scale: 0.97, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="w-full max-w-3xl max-h-[96vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl print:contents"
       >
         {/* Controls */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4 rounded-t-3xl sticky top-0 z-10">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4 print:hidden">
           <div className="flex items-center gap-2">
             <ReceiptText size={16} className="text-cyan-600" />
             <span className="text-sm font-bold text-slate-900">Dispatch Note — {dispatch.id}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              onClick={() => setShowPrintPreview(true)}
+              className="flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs font-semibold text-cyan-700 transition-colors hover:bg-cyan-100"
             >
-              <Printer size={13} /> Print
+              <Eye size={13} /> Print Preview
             </button>
             <button onClick={onClose} className="rounded-xl p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
               <X size={16} />
@@ -158,30 +251,99 @@ const DispatchNote = ({ dispatch, onClose }) => {
           </div>
         </div>
 
-        {/* Document Body */}
-        <div className="p-8 space-y-6 font-[system-ui] print:p-4">
+        <div className="space-y-4 p-5 print:hidden">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dispatch Reference</p>
+            <p className="mt-1 font-mono text-lg font-black text-cyan-700">{dispatch.id}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{dispatch.providerName}</p>
+            <p className="text-xs text-slate-500">{dispatch.contactPerson} · {dispatch.email}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Invoices", value: dispatch.invoiceCount },
+              { label: "Pages", value: totalPrintPages },
+              { label: "Total", value: formatKES(dispatch.totalAmount) },
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-xl border border-slate-100 bg-white px-3 py-3">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+                <p className="mt-1 text-sm font-black text-slate-900">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+            <p className="text-sm font-bold text-cyan-800">Print preview is ready</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              The printable packet has the dispatch letter on page 1 and invoice schedule pages from page 2 onward.
+              Each invoice schedule page holds up to {INVOICES_PER_DISPATCH_PAGE} invoices.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowPrintPreview(true)}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-cyan-800"
+            >
+              <Eye size={13} /> Open Print Preview
+            </button>
+          </div>
+        </div>
+
+        {showPrintPreview && (
+          <div className="fixed inset-0 z-[60] bg-slate-950/70 p-3 backdrop-blur-sm print:static print:bg-white print:p-0 print:backdrop-blur-none">
+            <div className="mx-auto flex h-full w-[min(100%,calc(210mm+32px))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-2xl print:block print:h-auto print:w-[210mm] print:overflow-visible print:rounded-none print:border-0 print:bg-white print:shadow-none">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 print:hidden">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Print Preview</p>
+                  <p className="text-xs text-slate-500">{dispatch.id} · {totalPrintPages} A4 pages</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-cyan-800"
+                  >
+                    <Printer size={13} /> Print
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrintPreview(false)}
+                    className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto p-4 print:overflow-visible print:p-0">
+        <div className="dispatch-note-print-area mx-auto space-y-4 print:space-y-0">
+        <div className="dispatch-note-page relative mx-auto h-[297mm] w-[210mm] max-w-full overflow-hidden bg-white p-[11mm] font-[system-ui] text-slate-800 shadow-xl print:m-0 print:h-[297mm] print:w-[210mm] print:max-w-none print:p-[10mm] print:shadow-none">
+          {showPrintPreview && (
+            <div className="absolute right-4 top-3 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 print:hidden">
+              Page 1 of {totalPrintPages}
+            </div>
+          )}
 
           {/* Letterhead */}
-          <div className="border-b-2 border-cyan-600 pb-5">
+          <div className="border-b-2 border-cyan-600 pb-3">
             <div className="flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-cyan-600 text-white font-black text-sm">M</div>
+                <div className="mb-1 flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-cyan-600 text-sm font-black text-white">M</div>
                   <div>
-                    <p className="text-lg font-black text-slate-900 leading-tight">{FACILITY.name}</p>
+                    <p className="text-base font-black leading-tight text-slate-900">{FACILITY.name}</p>
                     <p className="text-xs text-slate-500">{FACILITY.subtitle} · {FACILITY.mfl}</p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">{FACILITY.address}</p>
+                <p className="mt-1 text-[10px] text-slate-500">{FACILITY.address}</p>
                 <p className="text-xs text-slate-500">Tel: {FACILITY.phone} · Email: {FACILITY.email}</p>
               </div>
               <div className="text-right">
-                <div className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-2.5">
+                <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Dispatch Reference</p>
                   <p className="font-mono text-sm font-bold text-cyan-700">{dispatch.id}</p>
                   <p className="text-[10px] text-slate-500 mt-0.5">Date: {dispatchDate}</p>
                 </div>
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <StatusBadge status={dispatch.status} />
                 </div>
               </div>
@@ -189,23 +351,23 @@ const DispatchNote = ({ dispatch, onClose }) => {
           </div>
 
           {/* Addressee */}
-          <div className="space-y-0.5">
-            <p className="text-sm font-bold text-slate-900">{dispatch.contactPerson}</p>
-            <p className="text-sm text-slate-700">{dispatch.providerName}</p>
-            <p className="text-sm text-slate-600">{dispatch.address}</p>
-            <p className="text-sm text-slate-600">Email: {dispatch.email}</p>
-            {dispatch.phone && <p className="text-sm text-slate-600">Tel: {dispatch.phone}</p>}
+          <div className="mt-4 space-y-0.5">
+            <p className="text-xs font-bold text-slate-900">{dispatch.contactPerson}</p>
+            <p className="text-xs text-slate-700">{dispatch.providerName}</p>
+            <p className="text-xs text-slate-600">{dispatch.address}</p>
+            <p className="text-xs text-slate-600">Email: {dispatch.email}</p>
+            {dispatch.phone && <p className="text-xs text-slate-600">Tel: {dispatch.phone}</p>}
           </div>
 
           {/* Subject line */}
-          <div>
-            <p className="text-sm font-bold text-slate-900">
+          <div className="mt-4">
+            <p className="text-xs font-bold text-slate-900">
               RE: INVOICE DISPATCH NOTE — {dispatch.invoiceCount} INVOICE{dispatch.invoiceCount !== 1 ? "S" : ""} TOTALLING {formatKES(dispatch.totalAmount)}
             </p>
           </div>
 
           {/* Salutation + Opening */}
-          <div className="space-y-3 text-sm text-slate-700 leading-relaxed">
+          <div className="mt-3 space-y-2 text-xs leading-relaxed text-slate-700">
             <p>Dear {dispatch.contactPerson},</p>
             <p>
               Please find below a formal dispatch of <strong>{dispatch.invoiceCount} invoice{dispatch.invoiceCount !== 1 ? "s" : ""}</strong> for medical
@@ -215,72 +377,41 @@ const DispatchNote = ({ dispatch, onClose }) => {
             </p>
           </div>
 
-          {/* Invoice Table */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">INVOICE DETAILS</p>
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">#</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Invoice No.</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Patient Name</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">UHID</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">Date Finalized</th>
-                    <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Items</th>
-                    <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500">Amount (KES)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dispatch.invoiceSnapshots.map((inv, i) => (
-                    <tr key={inv.id} className="hover:bg-slate-50/60">
-                      <td className="px-4 py-3 text-xs text-slate-500">{i + 1}</td>
-                      <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">{inv.id}</td>
-                      <td className="px-4 py-3 text-xs font-medium text-slate-900">{inv.patientName}</td>
-                      <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{inv.uhid}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{formatDate(inv.finalizedAt)}</td>
-                      <td className="px-4 py-3 text-xs text-center text-slate-600">{inv.itemCount}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-right text-slate-900">{Number(inv.grandTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-300 bg-slate-50">
-                    <td colSpan={6} className="px-4 py-3 text-xs font-black text-right text-slate-700 uppercase tracking-wide">
-                      TOTAL AMOUNT CLAIMED
-                    </td>
-                    <td className="px-4 py-3 text-sm font-black text-right text-cyan-700">
-                      {Number(dispatch.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+          {/* Invoice Schedule Summary */}
+          <div className="mt-5 rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-700">
+              Invoice schedule attached
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-700">
+              The detailed list of all dispatched invoices starts on page 2. This dispatch includes{" "}
+              <strong>{dispatch.invoiceCount} invoice{dispatch.invoiceCount !== 1 ? "s" : ""}</strong> with a total claimed amount of{" "}
+              <strong>{formatKES(dispatch.totalAmount)}</strong>.
+            </p>
           </div>
 
           {/* Dispatch Metadata */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="mt-3 grid grid-cols-3 gap-2">
             {[
               { label: "Dispatch Method", value: dispatch.dispatchMethod },
               { label: "Provider Reference", value: dispatch.referenceNumber || "Pending" },
               { label: "Dispatched By", value: dispatch.dispatchedBy },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+              <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
+                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
                 <p className="text-xs font-semibold text-slate-800 mt-0.5">{value || "—"}</p>
               </div>
             ))}
           </div>
 
           {dispatch.notes && (
-            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-              <p className="text-xs font-bold text-amber-700 mb-1">Notes</p>
-              <p className="text-sm text-amber-800">{dispatch.notes}</p>
+            <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
+              <p className="mb-0.5 text-[10px] font-bold text-amber-700">Notes</p>
+              <p className="text-xs text-amber-800">{dispatch.notes}</p>
             </div>
           )}
 
           {/* Closing + Signature */}
-          <div className="space-y-4 text-sm text-slate-700">
+          <div className="mt-4 space-y-2 text-xs text-slate-700">
             <p>
               For any queries regarding this dispatch, please contact our billing department at{" "}
               <span className="font-semibold">{FACILITY.email}</span> or call{" "}
@@ -289,27 +420,130 @@ const DispatchNote = ({ dispatch, onClose }) => {
             <p>Yours faithfully,</p>
           </div>
 
-          <div className="pt-4 border-t border-slate-200">
-            <div className="grid grid-cols-2 gap-10">
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <div className="grid grid-cols-2 gap-8">
               <div>
-                <div className="h-12 border-b border-slate-400 mb-2" />
+                <div className="mb-1.5 h-9 border-b border-slate-400" />
                 <p className="text-xs font-bold text-slate-700">{dispatch.dispatchedBy}</p>
-                <p className="text-xs text-slate-500">Administrator / Authorized Signatory</p>
-                <p className="text-xs text-slate-500">{FACILITY.name}</p>
+                <p className="text-[10px] text-slate-500">Administrator / Authorized Signatory</p>
+                <p className="text-[10px] text-slate-500">{FACILITY.name}</p>
               </div>
               <div>
-                <div className="h-12 border-b border-slate-400 mb-2" />
+                <div className="mb-1.5 h-9 border-b border-slate-400" />
                 <p className="text-xs font-bold text-slate-700">For: {dispatch.providerName}</p>
-                <p className="text-xs text-slate-500">Acknowledgement Signature & Stamp</p>
-                <p className="text-xs text-slate-500">Date: ___________________</p>
+                <p className="text-[10px] text-slate-500">Acknowledgement Signature & Stamp</p>
+                <p className="text-[10px] text-slate-500">Date: ___________________</p>
               </div>
             </div>
           </div>
 
-          <p className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-4">
+          <p className="mt-4 border-t border-slate-100 pt-2 text-center text-[9px] text-slate-400">
             This is a computer-generated document. · {FACILITY.name} · {FACILITY.mfl} · {today}
           </p>
         </div>
+
+        {invoicePages.map((pageInvoices, pageIndex) => {
+          const firstInvoiceNumber = pageIndex * INVOICES_PER_DISPATCH_PAGE + 1;
+          const printPageNumber = pageIndex + 2;
+          const isLastInvoicePage = pageIndex === invoicePages.length - 1;
+
+          return (
+            <div
+              key={`invoice-page-${pageIndex}`}
+              className="dispatch-note-page relative mx-auto h-[297mm] w-[210mm] max-w-full overflow-hidden bg-white p-[10mm] font-[system-ui] text-slate-800 shadow-xl print:m-0 print:h-[297mm] print:w-[210mm] print:max-w-none print:shadow-none"
+            >
+              {showPrintPreview && (
+                <div className="absolute right-4 top-3 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 print:hidden">
+                  Page {printPageNumber} of {totalPrintPages}
+                </div>
+              )}
+
+              <div className="border-b-2 border-cyan-600 pb-3">
+                <div className="flex items-start justify-between gap-6">
+                  <div>
+                    <p className="text-base font-black leading-tight text-slate-900">{FACILITY.name}</p>
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      {FACILITY.subtitle} Â· {FACILITY.mfl} Â· {FACILITY.email}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Dispatch Reference</p>
+                    <p className="font-mono text-sm font-bold text-cyan-700">{dispatch.id}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-slate-900">Invoice Schedule</p>
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    {dispatch.providerName} Â· {dispatch.invoiceCount} invoice{dispatch.invoiceCount !== 1 ? "s" : ""} dispatched
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-right">
+                  <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">Schedule Page</p>
+                  <p className="text-xs font-bold text-slate-800">
+                    {pageIndex + 1} of {invoicePages.length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <table className="w-full table-fixed text-[10px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th className="w-[10%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">Date</th>
+                      <th className="w-[5%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">#</th>
+                      <th className="w-[14%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">Invoice No.</th>
+                      <th className="w-[20%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">Patient Name</th>
+                      <th className="w-[11%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">UHID</th>
+                      <th className="w-[18%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">Scheme</th>
+                      <th className="w-[12%] px-2 py-2 text-left text-[8px] font-bold uppercase tracking-wider text-slate-500">Member No</th>
+                      <th className="w-[10%] px-2 py-2 text-right text-[8px] font-bold uppercase tracking-wider text-slate-500">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pageInvoices.map((inv, i) => (
+                      <tr key={inv.id}>
+                        <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{formatDate(inv.finalizedAt)}</td>
+                        <td className="px-2 py-1.5 text-slate-500">{firstInvoiceNumber + i}</td>
+                        <td className="truncate px-2 py-1.5 font-mono font-semibold text-slate-700">{inv.id}</td>
+                        <td className="truncate px-2 py-1.5 font-medium text-slate-900">{inv.patientName}</td>
+                        <td className="truncate px-2 py-1.5 font-mono text-[9px] text-slate-500">{inv.uhid}</td>
+                        <td className="truncate px-2 py-1.5 font-semibold text-slate-700">{getInvoiceSchemeName(inv, dispatch.providerAccount)}</td>
+                        <td className="truncate px-2 py-1.5 font-mono text-[9px] font-semibold text-slate-600">{getInvoiceMemberNo(inv)}</td>
+                        <td className="px-2 py-1.5 text-right font-bold text-slate-900">
+                          {Number(inv.grandTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  {isLastInvoicePage && (
+                    <tfoot>
+                      <tr className="border-t-2 border-slate-300 bg-slate-50">
+                        <td colSpan={7} className="px-2 py-2 text-right text-[10px] font-black uppercase tracking-wide text-slate-700">
+                          Total Amount Claimed
+                        </td>
+                        <td className="px-2 py-2 text-right text-xs font-black text-cyan-700">
+                          {Number(dispatch.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+
+              <div className="absolute bottom-[10mm] left-[10mm] right-[10mm] border-t border-slate-100 pt-2 text-center text-[9px] text-slate-400">
+                Invoice schedule for dispatch {dispatch.id} Â· Page {printPageNumber} of {totalPrintPages}
+              </div>
+            </div>
+          );
+        })}
+        </div>
+              </div>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );
@@ -476,6 +710,8 @@ const Dispatches = () => {
       grandTotal: inv.grandTotal,
       itemCount: inv.items?.length || 0,
       paymentMethod: inv.paymentMethod,
+      schemeName: getInvoiceSchemeName(inv),
+      memberNo: getInvoiceMemberNo(inv),
       notes: inv.notes || "",
     }));
     const dispatch = {
@@ -518,9 +754,14 @@ const Dispatches = () => {
             Batch and dispatch credit invoices to insurers, corporates, and government accounts.
           </p>
         </div>
-        <button onClick={startCreate}
-          className="flex items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors shadow-sm shadow-cyan-200">
-          <Plus size={15} /> New Dispatch
+        <button onClick={creating ? () => setCreating(false) : startCreate}
+          className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors shadow-sm ${
+            creating
+              ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              : "bg-cyan-600 text-white shadow-cyan-200 hover:bg-cyan-700"
+          }`}>
+          {creating ? <X size={15} /> : <Plus size={15} />}
+          {creating ? "Back to Dispatches" : "New Dispatch"}
         </button>
       </div>
 
@@ -536,7 +777,7 @@ const Dispatches = () => {
       </AnimatePresence>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${creating ? "hidden" : ""}`}>
         {[
           { label: "Total Dispatches",     value: dispatches.length,         icon: ReceiptText,  color: "bg-slate-100 text-slate-600" },
           { label: "Awaiting Payment",     value: stats.pending,             icon: Send,         color: "bg-blue-100 text-blue-600" },
@@ -556,7 +797,7 @@ const Dispatches = () => {
       </div>
 
       {/* Workflow Status Legend */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+      <div className={`flex flex-wrap items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm ${creating ? "hidden" : ""}`}>
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Workflow:</span>
         {["Draft", "Dispatched", "Acknowledged", "Settled"].map((s, i, arr) => (
           <span key={s} className="flex items-center gap-1.5">
@@ -572,7 +813,7 @@ const Dispatches = () => {
       </div>
 
       {/* Tabs + Search */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${creating ? "hidden" : ""}`}>
         <div className="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
           {TABS.map((t) => (
             <button key={t} onClick={() => setActiveTab(t)}
@@ -591,7 +832,7 @@ const Dispatches = () => {
       </div>
 
       {/* Dispatch Table */}
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className={`rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden ${creating ? "hidden" : ""}`}>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <ReceiptText size={40} className="mb-3 opacity-20" />
@@ -603,7 +844,7 @@ const Dispatches = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  {["Dispatch ID", "Provider", "Method", "Invoices", "Total", "Progress", "Status", "Created", "Actions"].map((h) => (
+                  {["Dispatch ID", "Provider", "Scheme", "Member No.", "Method", "Invoices", "Total", "Progress", "Status", "Created", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -619,6 +860,12 @@ const Dispatches = () => {
                         <p className="text-xs font-semibold text-slate-900 leading-tight max-w-[160px] truncate">{d.providerName}</p>
                         <div className="mt-0.5"><TypeBadge type={d.providerType} /></div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="max-w-[150px] truncate text-xs font-semibold text-slate-700">{getDispatchSchemeSummary(d)}</p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="max-w-[110px] truncate font-mono text-xs font-semibold text-slate-600">{getDispatchMemberSummary(d)}</p>
                     </td>
                     <td className="px-4 py-4">
                       <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${METHOD_COLOR[d.dispatchMethod] || "bg-slate-100 text-slate-600"}`}>
@@ -699,12 +946,30 @@ const Dispatches = () => {
       {/* ─── CREATE DISPATCH WIZARD ─────────────────────────────────────────── */}
       <AnimatePresence>
         {creating && (
-          <Modal
-            title={step === 1 ? "New Dispatch — Select Provider" : "New Dispatch — Invoice Selection & Details"}
-            subtitle={step === 2 && selectedProvider ? `Provider: ${selectedProvider.providerName} · ${selectedProvider.account}` : undefined}
-            wide
-            onClose={() => setCreating(false)}
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="rounded-3xl border border-slate-200 bg-white shadow-sm"
           >
+            <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-cyan-700">New Dispatch</p>
+                <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900">
+                  {step === 1 ? "Select Provider" : "Invoice Selection & Details"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {step === 2 && selectedProvider
+                    ? `Provider: ${selectedProvider.providerName} · ${selectedProvider.account}`
+                    : "Choose a provider with eligible final credit invoices."}
+                </p>
+              </div>
+              <button onClick={() => setCreating(false)}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                <X size={14} /> Cancel
+              </button>
+            </div>
+            <div className="p-5">
             {/* Step indicators */}
             <div className="flex items-center gap-2 mb-6">
               {[1, 2].map((s) => (
@@ -727,31 +992,49 @@ const Dispatches = () => {
                     <p className="text-sm text-center max-w-xs mt-1">All Final credit invoices are either already dispatched or there are none to dispatch.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {providerOptions.map((prov) => {
-                      const selected = selectedProvider?.account === prov.account;
-                      const cfg = TYPE_CFG[prov.providerType] || TYPE_CFG.Corporate;
-                      const Icon = cfg.icon;
-                      return (
-                        <button key={prov.account} onClick={() => setSelectedProvider(prov)}
-                          className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all ${selected ? "border-cyan-400 bg-cyan-50 ring-2 ring-cyan-200" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"}`}>
-                          <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${cfg.color}`}>
-                            <Icon size={17} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-900 leading-tight">{prov.providerName}</p>
-                            <p className="font-mono text-[10px] text-slate-400">{prov.account}</p>
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                                {prov.invoices.length} invoice{prov.invoices.length !== 1 ? "s" : ""} ready
-                              </span>
-                              <span className="text-[10px] font-semibold text-slate-600">{formatKES(prov.total)}</span>
-                            </div>
-                          </div>
-                          {selected && <CheckCircle2 size={18} className="text-cyan-600 ml-auto shrink-0" />}
-                        </button>
-                      );
-                    })}
+                  <div className="overflow-hidden rounded-2xl border border-slate-200">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50">
+                          <th className="w-10 px-4 py-3" />
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Provider</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Type</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Contact</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">Invoices</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {providerOptions.map((prov) => {
+                          const selected = selectedProvider?.account === prov.account;
+                          return (
+                            <tr key={prov.account} onClick={() => setSelectedProvider(prov)}
+                              className={`cursor-pointer transition-colors ${selected ? "bg-cyan-50" : "hover:bg-slate-50"}`}>
+                              <td className="px-4 py-4">
+                                <div className={`flex size-5 items-center justify-center rounded-full border-2 ${selected ? "border-cyan-600 bg-cyan-600 text-white" : "border-slate-300 bg-white"}`}>
+                                  {selected && <CheckCircle2 size={13} strokeWidth={3} />}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <p className="text-sm font-bold text-slate-900">{prov.providerName}</p>
+                                <p className="mt-0.5 font-mono text-[10px] text-slate-400">{prov.account}</p>
+                              </td>
+                              <td className="px-4 py-4"><TypeBadge type={prov.providerType} /></td>
+                              <td className="px-4 py-4">
+                                <p className="max-w-[220px] truncate text-xs font-semibold text-slate-700">{prov.contactPerson}</p>
+                                <p className="max-w-[220px] truncate text-[10px] text-slate-400">{prov.email}</p>
+                              </td>
+                              <td className="px-4 py-4 text-center">
+                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                                  {prov.invoices.length} ready
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-right text-sm font-black text-slate-900">{formatKES(prov.total)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
                 <div className="flex justify-end gap-3 pt-2">
@@ -782,9 +1065,11 @@ const Dispatches = () => {
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-100">
                           <th className="w-10 px-3 py-2.5" />
+                          <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Date</th>
                           <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Invoice No.</th>
                           <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Patient</th>
-                          <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Finalized</th>
+                          <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Scheme Name</th>
+                          <th className="px-3 py-2.5 text-left text-[9px] font-bold uppercase tracking-wider text-slate-400">Member No</th>
                           <th className="px-3 py-2.5 text-right text-[9px] font-bold uppercase tracking-wider text-slate-400">Amount</th>
                         </tr>
                       </thead>
@@ -799,12 +1084,18 @@ const Dispatches = () => {
                                   {checked && <CheckCircle2 size={10} className="text-white" strokeWidth={3} />}
                                 </div>
                               </td>
+                              <td className="px-3 py-3 text-xs text-slate-500 whitespace-nowrap">{formatDate(inv.finalizedAt)}</td>
                               <td className="px-3 py-3 font-mono text-xs font-semibold text-slate-700">{inv.id}</td>
                               <td className="px-3 py-3">
                                 <p className="text-xs font-semibold text-slate-900 leading-tight">{inv.patient?.name}</p>
                                 <p className="text-[10px] text-slate-400">{inv.patient?.uhid}</p>
                               </td>
-                              <td className="px-3 py-3 text-xs text-slate-500 whitespace-nowrap">{formatDate(inv.finalizedAt)}</td>
+                              <td className="px-3 py-3">
+                                <p className="max-w-[180px] truncate text-xs font-semibold text-slate-700">{getInvoiceSchemeName(inv)}</p>
+                              </td>
+                              <td className="px-3 py-3">
+                                <p className="font-mono text-xs font-semibold text-slate-600">{getInvoiceMemberNo(inv)}</p>
+                              </td>
                               <td className="px-3 py-3 text-right">
                                 <span className={`text-sm font-bold ${checked ? "text-cyan-700" : "text-slate-700"}`}>{formatKES(inv.grandTotal)}</span>
                               </td>
@@ -879,7 +1170,8 @@ const Dispatches = () => {
                 </div>
               </div>
             )}
-          </Modal>
+            </div>
+          </motion.section>
         )}
       </AnimatePresence>
 
