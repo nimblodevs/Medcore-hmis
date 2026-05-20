@@ -7,9 +7,13 @@ import Sidebar from "../components/layout/Sidebar";
 const PatientRegistration = lazy(() => import("./Patient/RegistrationForm"));
 const PatientList = lazy(() => import("./Patient/PatientList"));
 const OpConsBilling = lazy(() => import("./Finance/OpConsBilling"));
+const OpServiceBilling = lazy(() => import("./Finance/OpServiceBilling"));
+const CashierTransactions = lazy(() => import("./Finance/CashierTransactions"));
 const Debtors = lazy(() => import("./Finance/Debtors"));
 const Schemes = lazy(() => import("./Finance/Schemes"));
 const Invoices = lazy(() => import("./Finance/Invoices"));
+const InterimInvoices = lazy(() => import("./Finance/InterimInvoices"));
+const InvoicePreview = lazy(() => import("./Finance/InvoicePreview"));
 const CreditPayments = lazy(() => import("./Finance/CreditPayments"));
 const Dispatches = lazy(() => import("./Finance/Dispatches"));
 const InsuranceClaimPayments = lazy(() => import("./Finance/InsuranceClaimPayments"));
@@ -36,12 +40,14 @@ const HMS = () => {
     if (path === "/patients/list") return "patient_list";
     if (path === "/finance/dashboard") return "finance_dashboard";
     if (path === "/finance/op-cons-billing") return "op_cons_billing";
+    if (path === "/finance/op-service-billing") return "op_service_billing";
+    if (path === "/finance/cashier-transactions") return "cashier_transactions";
     if (path === "/finance/debtors") return "debtors";
     if (path === "/finance/schemes") return "schemes";
-    if (path === "/finance/invoices") return "invoices";
+    if (path === "/finance/invoices" || path.startsWith("/finance/invoices/")) return "invoices";
     if (path === "/finance/credit-payments") return "credit_payments";
     if (path === "/finance/dispatches") return "dispatches";
-    if (path === "/finance/insurance-claim-payments") return "insurance_claim_payments";
+    if (path === "/finance/insurance-claim-allocation") return "insurance_claim_allocation";
     if (path === "/finance/aging-analysis") return "aging_analysis";
     if (path === "/dashboard") return "dashboard";
     return "patients";
@@ -52,12 +58,14 @@ const HMS = () => {
     else if (page === "patient_list") navigate("/patients/list");
     else if (page === "finance_dashboard") navigate("/finance/dashboard");
     else if (page === "op_cons_billing") navigate("/finance/op-cons-billing");
+    else if (page === "op_service_billing") navigate("/finance/op-service-billing");
+    else if (page === "cashier_transactions") navigate("/finance/cashier-transactions");
     else if (page === "debtors") navigate("/finance/debtors");
     else if (page === "schemes") navigate("/finance/schemes");
     else if (page === "invoices") navigate("/finance/invoices");
     else if (page === "credit_payments") navigate("/finance/credit-payments");
     else if (page === "dispatches") navigate("/finance/dispatches");
-    else if (page === "insurance_claim_payments") navigate("/finance/insurance-claim-payments");
+    else if (page === "insurance_claim_allocation") navigate("/finance/insurance-claim-allocation");
     else if (page === "aging_analysis") navigate("/finance/aging-analysis");
     else if (page === "dashboard") navigate("/dashboard");
     setIsSidebarOpen(false);
@@ -84,12 +92,16 @@ const HMS = () => {
                 <Route path="/patients/register" element={<PatientRegistration />} />
                 <Route path="/patients/list" element={<PatientList onRegisterClick={() => navigate("/patients/register")} />} />
                 <Route path="/finance/op-cons-billing" element={<OpConsBilling />} />
+                <Route path="/finance/op-service-billing" element={<OpServiceBilling />} />
+                <Route path="/finance/cashier-transactions" element={<CashierTransactions />} />
                 <Route path="/finance/debtors" element={<Debtors />} />
                 <Route path="/finance/schemes" element={<Schemes />} />
                 <Route path="/finance/invoices" element={<Invoices />} />
+                <Route path="/finance/invoices/interim" element={<InterimInvoices />} />
+                <Route path="/finance/invoices/preview/:invoiceId" element={<InvoicePreview />} />
                 <Route path="/finance/credit-payments" element={<CreditPayments />} />
                 <Route path="/finance/dispatches" element={<Dispatches />} />
-                <Route path="/finance/insurance-claim-payments" element={<InsuranceClaimPayments />} />
+                <Route path="/finance/insurance-claim-allocation" element={<InsuranceClaimPayments />} />
                 <Route path="/finance/aging-analysis" element={<AgingAnalysis />} />
                 <Route path="/finance/dashboard" element={<FinanceDashboard />} />
                 <Route path="/dashboard" element={

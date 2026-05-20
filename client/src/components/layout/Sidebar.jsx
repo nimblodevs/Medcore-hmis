@@ -249,7 +249,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["finance_dashboard", "op_cons_billing", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "insurance_claim_payments", "aging_analysis"].includes(activePage)}
+              active={["finance_dashboard", "op_cons_billing", "op_service_billing", "cashier_transactions", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "insurance_claim_allocation", "aging_analysis"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -266,6 +266,20 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "op_cons_billing"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("op_cons_billing")}
+              />
+              <SidebarItem
+                icon={Receipt}
+                label="OP Service Billing"
+                active={activePage === "op_service_billing"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("op_service_billing")}
+              />
+              <SidebarItem
+                icon={CreditCard}
+                label="Cashier Transactions"
+                active={activePage === "cashier_transactions"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("cashier_transactions")}
               />
               <SidebarItem
                 icon={Building2}
@@ -304,10 +318,10 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
               />
               <SidebarItem
                 icon={CreditCard}
-                label="Claim Payments"
-                active={activePage === "insurance_claim_payments"}
+                label="Claim Allocation"
+                active={activePage === "insurance_claim_allocation"}
                 isSubItem={true}
-                onClick={() => onPageChange?.("insurance_claim_payments")}
+                onClick={() => onPageChange?.("insurance_claim_allocation")}
               />
               <SidebarItem
                 icon={BarChart3}

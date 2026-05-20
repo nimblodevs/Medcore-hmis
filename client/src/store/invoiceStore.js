@@ -416,6 +416,153 @@ const seed = [
     notes: "Ministry of Health referral. Patient on NHIF + Gov top-up scheme.",
   },
   {
+    id: "INV-20260518-0016",
+    patient: {
+      uhid: "UHID-000468",
+      name: "Mrs Mercy Wambui Njoroge",
+      patientId: "PID-10268",
+      gender: "Female",
+      dob: "1982-10-09",
+      paymentCategory: "Insurance",
+      corporateName: "Jubilee Health Insurance",
+      phone: "0710101010",
+    },
+    items: [
+      { id: "i1", billId: "BILL-OPD-20260518-001", servicePoint: "Consultation (OPD)", description: "General Consultation", qty: 1, unitPrice: 1500, discount: 0, netAmount: 1500 },
+      { id: "i2", billId: "BILL-LAB-20260518-001", servicePoint: "Laboratory", description: "Full Haemogram", qty: 1, unitPrice: 950, discount: 0, netAmount: 950 },
+      { id: "i3", billId: "BILL-LAB-20260518-001", servicePoint: "Laboratory", description: "ESR", qty: 1, unitPrice: 700, discount: 0, netAmount: 700 },
+    ],
+    subtotal: 3150,
+    discountTotal: 0,
+    copayment: 300,
+    grandTotal: 3450,
+    paymentMethod: "Insurance",
+    providerAccount: "ACC-2024-0001",
+    status: "Interim",
+    createdAt: "2026-05-18T09:20:00",
+    finalizedAt: null,
+    paidAt: null,
+    notes: "",
+  },
+  {
+    id: "INV-20260518-0017",
+    patient: {
+      uhid: "UHID-000472",
+      name: "Mr Allan Kipruto Langat",
+      patientId: "PID-10272",
+      gender: "Male",
+      dob: "1979-04-17",
+      paymentCategory: "Corporate",
+      corporateName: "Kenya Airways Staff Union",
+      phone: "0710202020",
+    },
+    items: [
+      { id: "i1", billId: "BILL-OPD-20260518-002", servicePoint: "Consultation (OPD)", description: "Specialist Consultation", qty: 1, unitPrice: 3500, discount: 0, netAmount: 3500 },
+      { id: "i2", billId: "BILL-RAD-20260518-002", servicePoint: "Radiology / Imaging", description: "Knee X-Ray", qty: 1, unitPrice: 2200, discount: 0, netAmount: 2200 },
+      { id: "i3", billId: "BILL-PHY-20260518-001", servicePoint: "Physiotherapy", description: "Physiotherapy Session", qty: 1, unitPrice: 2000, discount: 0, netAmount: 2000 },
+    ],
+    subtotal: 7700,
+    discountTotal: 0,
+    copayment: 500,
+    grandTotal: 8200,
+    paymentMethod: "Corporate",
+    providerAccount: "ACC-2024-0003",
+    status: "Interim",
+    createdAt: "2026-05-18T12:10:00",
+    finalizedAt: null,
+    paidAt: null,
+    notes: "",
+  },
+  {
+    id: "INV-20260519-0018",
+    patient: {
+      uhid: "UHID-000481",
+      name: "Ms Naomi Akinyi Were",
+      patientId: "PID-10281",
+      gender: "Female",
+      dob: "1991-02-02",
+      paymentCategory: "Insurance",
+      corporateName: "AAR Healthcare",
+      phone: "0710303030",
+    },
+    items: [
+      { id: "i1", billId: "BILL-EMR-20260519-001", servicePoint: "Casualty / Emergency", description: "Emergency Consultation", qty: 1, unitPrice: 2500, discount: 0, netAmount: 2500 },
+      { id: "i2", billId: "BILL-LAB-20260519-001", servicePoint: "Laboratory", description: "Malaria RDT", qty: 1, unitPrice: 600, discount: 0, netAmount: 600 },
+      { id: "i3", billId: "BILL-PHA-20260519-001", servicePoint: "Pharmacy", description: "Artemether-Lumefantrine (AL) 24 tabs", qty: 1, unitPrice: 950, discount: 0, netAmount: 950 },
+      { id: "i4", billId: "BILL-PHA-20260519-001", servicePoint: "Pharmacy", description: "Paracetamol 500mg (24 tabs)", qty: 1, unitPrice: 120, discount: 0, netAmount: 120 },
+    ],
+    subtotal: 4170,
+    discountTotal: 0,
+    copayment: 0,
+    grandTotal: 4170,
+    paymentMethod: "Insurance",
+    providerAccount: "ACC-2024-0002",
+    status: "Interim",
+    createdAt: "2026-05-19T08:40:00",
+    finalizedAt: null,
+    paidAt: null,
+    notes: "",
+  },
+  {
+    id: "INV-20260519-0019",
+    patient: {
+      uhid: "UHID-000489",
+      name: "Mr Peter Mwangi Githinji",
+      patientId: "PID-10289",
+      gender: "Male",
+      dob: "1986-07-27",
+      paymentCategory: "Corporate",
+      corporateName: "Safaricom PLC",
+      phone: "0710404040",
+    },
+    items: [
+      { id: "i1", billId: "BILL-OPD-20260519-003", servicePoint: "Consultation (OPD)", description: "Executive Health Review", qty: 1, unitPrice: 4500, discount: 0, netAmount: 4500 },
+      { id: "i2", billId: "BILL-LAB-20260519-003", servicePoint: "Laboratory", description: "Lipid Profile", qty: 1, unitPrice: 2200, discount: 0, netAmount: 2200 },
+      { id: "i3", billId: "BILL-LAB-20260519-003", servicePoint: "Laboratory", description: "Liver Function Tests", qty: 1, unitPrice: 3500, discount: 0, netAmount: 3500 },
+      { id: "i4", billId: "BILL-RAD-20260519-003", servicePoint: "Radiology / Imaging", description: "ECG 12-Lead", qty: 1, unitPrice: 1800, discount: 0, netAmount: 1800 },
+    ],
+    subtotal: 12000,
+    discountTotal: 0,
+    copayment: 0,
+    grandTotal: 12000,
+    paymentMethod: "Corporate",
+    providerAccount: "ACC-2024-0004",
+    status: "Interim",
+    createdAt: "2026-05-19T13:15:00",
+    finalizedAt: null,
+    paidAt: null,
+    notes: "",
+  },
+  {
+    id: "INV-20260520-0020",
+    patient: {
+      uhid: "UHID-000497",
+      name: "Mrs Esther Chebet Rono",
+      patientId: "PID-10297",
+      gender: "Female",
+      dob: "1974-12-11",
+      paymentCategory: "Government",
+      corporateName: "Ministry of Health",
+      phone: "0710505050",
+    },
+    items: [
+      { id: "i1", billId: "BILL-OPD-20260520-001", servicePoint: "Consultation (OPD)", description: "Specialist Consultation (Internal Medicine)", qty: 1, unitPrice: 4500, discount: 0, netAmount: 4500 },
+      { id: "i2", billId: "BILL-LAB-20260520-001", servicePoint: "Laboratory", description: "Renal Function Tests", qty: 1, unitPrice: 3800, discount: 0, netAmount: 3800 },
+      { id: "i3", billId: "BILL-PHA-20260520-001", servicePoint: "Pharmacy", description: "Amlodipine 5mg (30 tabs)", qty: 1, unitPrice: 650, discount: 0, netAmount: 650 },
+    ],
+    subtotal: 8950,
+    discountTotal: 0,
+    copayment: 0,
+    grandTotal: 8950,
+    paymentMethod: "Government",
+    providerAccount: "ACC-2024-0005",
+    status: "Interim",
+    createdAt: "2026-05-20T10:05:00",
+    finalizedAt: null,
+    paidAt: null,
+    notes: "",
+  },
+  {
     id: "INV-20260516-0005",
     patient: {
       uhid: "UHID-000232",
@@ -446,12 +593,20 @@ const seed = [
 ];
 
 let invoiceCounter = seed.length + 1;
+let billCounter = 1;
 
 export const generateInvoiceId = () => {
   const d = new Date();
   const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
   const seq = String(invoiceCounter++).padStart(4, "0");
   return `INV-${dateStr}-${seq}`;
+};
+
+export const generateBillId = (prefix = "BILL") => {
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const seq = String(billCounter++).padStart(4, "0");
+  return `${prefix}-${dateStr}-${seq}`;
 };
 
 export const useInvoiceStore = create((set) => ({
