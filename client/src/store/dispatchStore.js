@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { generateDispatchNoteNo } from "../services/referenceApi";
 
 const seedDispatches = [
   {
@@ -111,13 +112,8 @@ const seedDispatches = [
   },
 ];
 
-let dispatchCounter = seedDispatches.length + 1;
-
 export const generateDispatchId = () => {
-  const d = new Date();
-  const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const seq = String(dispatchCounter++).padStart(4, "0");
-  return `DSP-${dateStr}-${seq}`;
+  return generateDispatchNoteNo();
 };
 
 export const useDispatchStore = create((set) => ({

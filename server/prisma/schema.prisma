@@ -1,0 +1,648 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum BillingType {
+  CASH
+  CREDIT
+  INSURANCE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SUBMITTED_TO_PAYER
+  PARTIALLY_PAID
+  FULLY_PAID
+  REJECTED
+  CANCELLED
+  REVERSED
+}
+
+enum VisitType {
+  OUTPATIENT
+  INPATIENT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  MOBILE_MONEY
+  CARD
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  SETTLED
+}
+
+enum ApprovalAction {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+  REVERSED
+  SUBMITTED_TO_PAYER
+  CLAIM_GENERATED
+}
+
+model Tenant {
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String
+  code               String              @unique
+  legalName          String?
+  registrationNo     String?
+  taxPin             String?
+  phone              String?
+  email              String?
+  website            String?
+  contactPersonName  String?
+  contactPersonPhone String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  country            String?
+  postalCode         String?
+  timezone           String?
+  isActive           Boolean             @default(true)
+  createdById        String?             @db.Uuid
+  updatedById        String?             @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  branches           Branch[]
+  users              User[]
+  roles              Role[]
+  permissions        Permission[]
+  userRoles          UserRole[]
+  rolePermissions    RolePermission[]
+  userBranches       UserBranch[]
+  departments        Department[]
+  userDepartments    UserDepartment[]
+  patients           Patient[]
+  visits             Visit[]
+  creditCustomers    CreditCustomer[]
+  insuranceSchemes   InsuranceScheme[]
+  invoices           Invoice[]
+  invoiceItems       InvoiceItem[]
+  invoiceApprovals   InvoiceApproval[]
+  payments           Payment[]
+  paymentAllocations PaymentAllocation[]
+  receipts           Receipt[]
+  claims             Claim[]
+  auditLogs          AuditLog[]
+}
+
+model Branch {
+  id                 String              @id @default(uuid()) @db.Uuid
+  tenantId           String              @db.Uuid
+  name               String
+  code               String
+  branchType         String?
+  phone              String?
+  email              String?
+  contactPersonName  String?
+  contactPersonPhone String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  country            String?
+  postalCode         String?
+  isActive           Boolean             @default(true)
+  createdById        String?             @db.Uuid
+  updatedById        String?             @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userBranches       UserBranch[]
+  departments        Department[]
+  userDepartments    UserDepartment[]
+  patients           Patient[]
+  visits             Visit[]
+  creditCustomers    CreditCustomer[]
+  insuranceSchemes   InsuranceScheme[]
+  invoices           Invoice[]
+  invoiceItems       InvoiceItem[]
+  invoiceApprovals   InvoiceApproval[]
+  payments           Payment[]
+  paymentAllocations PaymentAllocation[]
+  receipts           Receipt[]
+  claims             Claim[]
+  auditLogs          AuditLog[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model User {
+  id               String      @id @default(uuid()) @db.Uuid
+  tenantId         String?     @db.Uuid
+  firstName        String
+  middleName       String?
+  lastName         String
+  email            String      @unique
+  phone            String?
+  staffId          String?
+  jobTitle         String?
+  gender           String?
+  dateOfBirth      DateTime?
+  address          String?
+  primaryDepartmentId String?  @db.Uuid
+  passwordHash     String
+  isSuperAdmin     Boolean     @default(false)
+  isActive         Boolean     @default(true)
+  refreshTokenHash String?
+  createdById      String?     @db.Uuid
+  updatedById      String?     @db.Uuid
+  deletedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  tenant           Tenant?     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  primaryDepartment Department? @relation("PrimaryDepartment", fields: [primaryDepartmentId], references: [id], onDelete: SetNull)
+  roles            UserRole[]
+  branches         UserBranch[]
+  departments      UserDepartment[]
+  auditLogs        AuditLog[]
+
+  @@unique([tenantId, staffId])
+  @@index([tenantId])
+}
+
+model Department {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String           @db.Uuid
+  branchId        String?          @db.Uuid
+  name            String
+  code            String
+  description     String?
+  isClinical      Boolean          @default(false)
+  isActive        Boolean          @default(true)
+  createdById     String?          @db.Uuid
+  updatedById     String?          @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  usersPrimary    User[]           @relation("PrimaryDepartment")
+  userDepartments UserDepartment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, branchId])
+}
+
+model Role {
+  id               String           @id @default(uuid()) @db.Uuid
+  tenantId         String?          @db.Uuid
+  name             String
+  code             String           @unique
+  description      String?
+  isSystem         Boolean          @default(false)
+  createdById      String?          @db.Uuid
+  updatedById      String?          @db.Uuid
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  tenant           Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+
+  @@index([tenantId])
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenantId        String?          @db.Uuid
+  name            String
+  code            String           @unique
+  description     String?
+  createdById     String?          @db.Uuid
+  updatedById     String?          @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  rolePermissions RolePermission[]
+
+  @@index([tenantId])
+}
+
+model UserRole {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  userId      String   @db.Uuid
+  roleId      String   @db.Uuid
+  createdById String?  @db.Uuid
+  updatedById String?  @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, roleId])
+  @@index([tenantId, userId])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid()) @db.Uuid
+  tenantId     String?    @db.Uuid
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  createdById  String?    @db.Uuid
+  updatedById  String?    @db.Uuid
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  tenant       Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([tenantId])
+}
+
+model UserBranch {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  userId      String   @db.Uuid
+  branchId    String   @db.Uuid
+  createdById String?  @db.Uuid
+  updatedById String?  @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, branchId])
+  @@index([tenantId, userId])
+}
+
+model UserDepartment {
+  id           String      @id @default(uuid()) @db.Uuid
+  tenantId     String      @db.Uuid
+  branchId     String?     @db.Uuid
+  userId       String      @db.Uuid
+  departmentId String      @db.Uuid
+  createdById  String?     @db.Uuid
+  updatedById  String?     @db.Uuid
+  deletedAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch       Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, departmentId])
+  @@index([tenantId, userId, departmentId])
+}
+
+model Patient {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  branchId           String    @db.Uuid
+  uhid               String
+  firstName          String
+  middleName         String?
+  lastName           String
+  dateOfBirth        DateTime?
+  gender             String?
+  phone              String?
+  email              String?
+  createdById        String?   @db.Uuid
+  updatedById        String?   @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  visits             Visit[]
+  invoices           Invoice[]
+  payments           Payment[]
+  receipts           Receipt[]
+  claims             Claim[]
+
+  @@unique([tenantId, uhid])
+  @@index([tenantId, branchId])
+}
+
+model Visit {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  branchId           String    @db.Uuid
+  patientId          String    @db.Uuid
+  visitNo            String
+  visitDate          DateTime
+  visitType          VisitType @default(OUTPATIENT)
+  doctorName         String?
+  createdById        String?   @db.Uuid
+  updatedById        String?   @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient            Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  invoices           Invoice[]
+  claims             Claim[]
+
+  @@unique([tenantId, visitNo])
+  @@index([tenantId, branchId, patientId])
+}
+
+model CreditCustomer {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  branchId           String?   @db.Uuid
+  name               String
+  customerCode       String
+  customerType       String
+  creditLimit        Decimal   @default(0) @db.Decimal(14, 2)
+  isActive           Boolean   @default(true)
+  createdById        String?   @db.Uuid
+  updatedById        String?   @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  invoices           Invoice[]
+  claims             Claim[]
+
+  @@unique([tenantId, customerCode])
+  @@index([tenantId, branchId])
+}
+
+model InsuranceScheme {
+  id                    String    @id @default(uuid()) @db.Uuid
+  tenantId              String    @db.Uuid
+  branchId              String?   @db.Uuid
+  name                  String
+  schemeCode            String
+  requiresAuthorization Boolean   @default(false)
+  createdById           String?   @db.Uuid
+  updatedById           String?   @db.Uuid
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  invoices              Invoice[]
+  claims                Claim[]
+
+  @@unique([tenantId, schemeCode])
+  @@index([tenantId, branchId])
+}
+
+model Invoice {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  branchId          String        @db.Uuid
+  invoiceNo         String
+  invoiceDate       DateTime
+  patientId         String        @db.Uuid
+  visitId           String        @db.Uuid
+  creditCustomerId  String?       @db.Uuid
+  schemeId          String?       @db.Uuid
+  billingType       BillingType
+  authorizationNo   String?
+  grossAmount       Decimal       @db.Decimal(14, 2)
+  discountAmount    Decimal       @default(0) @db.Decimal(14, 2)
+  netAmount         Decimal       @db.Decimal(14, 2)
+  patientCopayAmount Decimal      @default(0) @db.Decimal(14, 2)
+  creditAmount      Decimal       @db.Decimal(14, 2)
+  amountPaid        Decimal       @default(0) @db.Decimal(14, 2)
+  outstandingAmount Decimal       @db.Decimal(14, 2)
+  status            InvoiceStatus @default(DRAFT)
+  notes             String?
+  createdById       String?       @db.Uuid
+  updatedById       String?       @db.Uuid
+  approvedById      String?       @db.Uuid
+  approvedAt        DateTime?
+  submittedAt       DateTime?
+  cancelledAt       DateTime?
+  reversedAt        DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient           Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  visit             Visit         @relation(fields: [visitId], references: [id], onDelete: Restrict)
+  creditCustomer    CreditCustomer? @relation(fields: [creditCustomerId], references: [id], onDelete: SetNull)
+  scheme            InsuranceScheme? @relation(fields: [schemeId], references: [id], onDelete: SetNull)
+  items             InvoiceItem[]
+  approvals         InvoiceApproval[]
+  paymentAllocations PaymentAllocation[]
+  receipts          Receipt[]
+  claim             Claim?
+
+  @@unique([tenantId, invoiceNo])
+  @@unique([tenantId, visitId, billingType])
+  @@index([tenantId, branchId, status])
+}
+
+model InvoiceItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  branchId       String   @db.Uuid
+  invoiceId      String   @db.Uuid
+  servicePoint   String
+  itemCode       String?
+  description    String
+  quantity       Decimal  @default(1) @db.Decimal(10, 2)
+  unitPrice      Decimal  @db.Decimal(14, 2)
+  discountAmount Decimal  @default(0) @db.Decimal(14, 2)
+  netAmount      Decimal  @db.Decimal(14, 2)
+  createdById    String?  @db.Uuid
+  updatedById    String?  @db.Uuid
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, invoiceId])
+}
+
+model InvoiceApproval {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @db.Uuid
+  branchId    String         @db.Uuid
+  invoiceId   String         @db.Uuid
+  action      ApprovalAction
+  comments    String?
+  actedById   String         @db.Uuid
+  createdById String?        @db.Uuid
+  updatedById String?        @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch      Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice     Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, invoiceId, action])
+}
+
+model Payment {
+  id                 String              @id @default(uuid()) @db.Uuid
+  tenantId           String              @db.Uuid
+  branchId           String              @db.Uuid
+  patientId          String?             @db.Uuid
+  paymentDate        DateTime
+  paymentMethod      PaymentMethod
+  referenceNo        String?
+  amountReceived     Decimal             @db.Decimal(14, 2)
+  unappliedAmount    Decimal             @db.Decimal(14, 2)
+  notes              String?
+  createdById        String?             @db.Uuid
+  updatedById        String?             @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient            Patient?            @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  allocations        PaymentAllocation[]
+  receipts           Receipt[]
+
+  @@index([tenantId, branchId, paymentDate])
+}
+
+model PaymentAllocation {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @db.Uuid
+  branchId         String    @db.Uuid
+  paymentId        String    @db.Uuid
+  invoiceId        String    @db.Uuid
+  allocatedAmount  Decimal   @db.Decimal(14, 2)
+  allocationDate   DateTime  @default(now())
+  createdById      String?   @db.Uuid
+  updatedById      String?   @db.Uuid
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  payment          Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice          Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  receipt          Receipt?
+
+  @@unique([paymentId, invoiceId])
+  @@index([tenantId, invoiceId])
+}
+
+model Receipt {
+  id                  String             @id @default(uuid()) @db.Uuid
+  tenantId            String             @db.Uuid
+  branchId            String             @db.Uuid
+  receiptNo           String
+  receiptDate         DateTime
+  invoiceId           String?            @db.Uuid
+  paymentId           String             @db.Uuid
+  paymentAllocationId String?            @db.Uuid @unique
+  patientId           String?            @db.Uuid
+  amount              Decimal            @db.Decimal(14, 2)
+  createdById         String?            @db.Uuid
+  updatedById         String?            @db.Uuid
+  deletedAt           DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch              Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice             Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payment             Payment            @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  allocation          PaymentAllocation? @relation(fields: [paymentAllocationId], references: [id], onDelete: SetNull)
+  patient             Patient?           @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, receiptNo])
+  @@index([tenantId, branchId, receiptDate])
+}
+
+model Claim {
+  id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String      @db.Uuid
+  branchId           String      @db.Uuid
+  claimNo            String
+  invoiceId          String      @db.Uuid @unique
+  visitId            String?     @db.Uuid
+  creditCustomerId   String?     @db.Uuid
+  schemeId           String?     @db.Uuid
+  claimDate          DateTime
+  claimAmount        Decimal     @db.Decimal(14, 2)
+  status             ClaimStatus @default(DRAFT)
+  submittedAt        DateTime?
+  settledAt          DateTime?
+  createdById        String?     @db.Uuid
+  updatedById        String?     @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  tenant             Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice            Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  visit              Visit?      @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  creditCustomer     CreditCustomer? @relation(fields: [creditCustomerId], references: [id], onDelete: SetNull)
+  scheme             InsuranceScheme? @relation(fields: [schemeId], references: [id], onDelete: SetNull)
+  patient            Patient?    @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  patientId          String?     @db.Uuid
+
+  @@unique([tenantId, claimNo])
+  @@index([tenantId, branchId, status])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @db.Uuid
+  branchId    String?  @db.Uuid
+  userId      String?  @db.Uuid
+  action      String
+  entity      String
+  entityId    String?
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdById String?  @db.Uuid
+  updatedById String?  @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, branchId, action, createdAt])
+}
+
+model ReferenceSequence {
+  id         String   @id @default(uuid()) @db.Uuid
+  scopeKey   String
+  type       String
+  dateKey    String
+  lastNumber Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([scopeKey, type, dateKey])
+  @@index([type, dateKey])
+}

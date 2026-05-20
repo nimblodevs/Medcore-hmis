@@ -6,6 +6,7 @@ const Input = ({
   onChange,
   onBlur,
   onFocus,
+  onKeyDown,
   placeholder,
   type = "text",
   required = false,
@@ -48,6 +49,7 @@ const Input = ({
           onChange={onChange}
           onBlur={onBlur}
           onFocus={onFocus}
+          onKeyDown={onKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}

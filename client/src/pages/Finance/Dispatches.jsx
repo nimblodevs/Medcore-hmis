@@ -9,6 +9,7 @@ import {
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useDispatchStore, generateDispatchId } from "../../store/dispatchStore";
 import { mockProviders, mockSchemes } from "../../constants/mockDebtors";
+import { generateClaimReferenceNo } from "../../services/referenceApi";
 
 const FACILITY = {
   name: "MediCore General Hospital",
@@ -699,7 +700,7 @@ const Dispatches = () => {
     setSelectedInvoiceIds(selectedInvoiceIds.length === allIds.length ? [] : allIds);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!selectedProvider || selectedInvoiceIds.length === 0) return;
     const chosen = selectedProviderInvoices.filter((inv) => selectedInvoiceIds.includes(inv.id));
     const snapshots = chosen.map((inv) => ({
@@ -714,8 +715,11 @@ const Dispatches = () => {
       memberNo: getInvoiceMemberNo(inv),
       notes: inv.notes || "",
     }));
+    const dispatchId = await generateDispatchId();
+    const providerReference = createForm.reference.trim() || await generateClaimReferenceNo();
+
     const dispatch = {
-      id: generateDispatchId(),
+      id: dispatchId,
       providerAccount: selectedProvider.account,
       providerName: selectedProvider.providerName,
       providerType: selectedProvider.providerType,
@@ -728,7 +732,7 @@ const Dispatches = () => {
       totalAmount: selectedTotal,
       invoiceCount: chosen.length,
       dispatchMethod: createForm.method,
-      referenceNumber: createForm.reference.trim(),
+      referenceNumber: providerReference,
       status: "Draft",
       createdAt: new Date().toISOString(),
       dispatchedAt: null,

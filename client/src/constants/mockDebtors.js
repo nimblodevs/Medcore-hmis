@@ -106,6 +106,7 @@ export const mockSchemes = [
     schemeName: "Jubilee Gold Plan",
     providerId: "PRV-001",
     providerName: "Jubilee Health Insurance",
+    biometricType: "Smart",
     copaymentType: "Fixed",
     copaymentScope: "Per Service Point",
     categories: [
@@ -133,6 +134,7 @@ export const mockSchemes = [
     schemeName: "Jubilee Silver Plan",
     providerId: "PRV-001",
     providerName: "Jubilee Health Insurance",
+    biometricType: "Slade",
     copaymentType: "Percentage",
     copaymentScope: "On Consultation",
     categories: [
@@ -157,6 +159,7 @@ export const mockSchemes = [
     schemeName: "AAR Executive Cover",
     providerId: "PRV-002",
     providerName: "AAR Healthcare",
+    biometricType: "Mtiba",
     copaymentType: "None",
     copaymentScope: "N/A",
     categories: [
@@ -182,6 +185,7 @@ export const mockSchemes = [
     schemeName: "KQ Staff Medical Scheme",
     providerId: "PRV-003",
     providerName: "Kenya Airways Staff Union",
+    biometricType: "SHA",
     copaymentType: "Fixed",
     copaymentScope: "Per Service Point",
     categories: [
@@ -207,6 +211,7 @@ export const mockSchemes = [
     schemeName: "MOH Civil Servants Scheme",
     providerId: "PRV-005",
     providerName: "Ministry of Health",
+    biometricType: "SHA",
     copaymentType: "None",
     copaymentScope: "N/A",
     categories: [

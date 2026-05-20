@@ -10,6 +10,7 @@ import { mockSchemes, mockProviders, SERVICE_POINTS } from "../../constants/mock
 const COPAYMENT_TYPES = ["Fixed", "Percentage", "None"];
 const COPAYMENT_SCOPES = ["Per Service Point", "On Consultation", "Both"];
 const STATUS_OPTIONS = ["Active", "Inactive"];
+const BIOMETRIC_TYPES = ["Smart", "Slade", "Mtiba", "SHA"];
 
 const statusStyle = {
   Active: "bg-emerald-100 text-emerald-700",
@@ -33,6 +34,7 @@ const EMPTY_SERVICE_POINT = { point: SERVICE_POINTS[0], copayOverride: "", limit
 const EMPTY_FORM = {
   schemeName: "",
   providerId: "",
+  biometricType: "Smart",
   copaymentType: "Fixed",
   copaymentScope: "Per Service Point",
   categories: [{ ...EMPTY_CATEGORY }],
@@ -273,6 +275,7 @@ const Schemes = () => {
       schemeName: form.schemeName,
       providerId: form.providerId,
       providerName: provider?.providerName || "",
+      biometricType: form.biometricType,
       copaymentType: form.copaymentType,
       copaymentScope: form.copaymentType === "None" ? "N/A" : form.copaymentScope,
       categories: form.categories.map((c) => ({
@@ -324,6 +327,7 @@ const Schemes = () => {
     setForm({
       schemeName: scheme.schemeName,
       providerId: scheme.providerId,
+      biometricType: scheme.biometricType || "Smart",
       copaymentType: scheme.copaymentType,
       copaymentScope: scheme.copaymentScope === "N/A" ? "Per Service Point" : scheme.copaymentScope,
       categories: scheme.categories.map((c) => ({
@@ -390,6 +394,7 @@ const Schemes = () => {
                 </select>
                 {formErrors.providerId && <p className="mt-1 text-xs text-red-500">{formErrors.providerId}</p>}
               </div>
+              <SelectField label="Biometric Type" name="biometricType" value={form.biometricType} onChange={handleFormChange} options={BIOMETRIC_TYPES} />
               <SelectField label="Status" name="status" value={form.status} onChange={handleFormChange} options={STATUS_OPTIONS} />
               <div>
                 <InputField label="Effective Date" name="effectiveDate" type="date" value={form.effectiveDate} onChange={handleFormChange} required />
@@ -727,8 +732,9 @@ const Schemes = () => {
               {/* Copayment Overview */}
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Copayment Configuration</p>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {[
+                    { label: "Biometric Type", value: viewScheme.biometricType || "Smart" },
                     { label: "Type", value: viewScheme.copaymentType },
                     { label: "Scope", value: viewScheme.copaymentScope },
                     { label: "Overall Limit", value: viewScheme.hasOverallLimit ? formatKES(viewScheme.overallLimit) : "No Limit" },

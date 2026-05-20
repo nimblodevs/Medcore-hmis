@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { generateBillNo, generateInvoiceNo } from "../services/referenceApi";
 
 const seed = [
   {
@@ -393,7 +394,7 @@ const seed = [
       patientId: "PID-10256",
       gender: "Male",
       dob: "1965-03-30",
-      paymentCategory: "Government",
+      paymentCategory: "Corporate",
       phone: "0799500600",
     },
     items: [
@@ -407,7 +408,7 @@ const seed = [
     discountTotal: 0,
     copayment: 0,
     grandTotal: 24000,
-    paymentMethod: "Government",
+    paymentMethod: "Corporate",
     providerAccount: "ACC-2024-0005",
     status: "Final",
     createdAt: "2026-01-15T10:00:00",
@@ -541,7 +542,7 @@ const seed = [
       patientId: "PID-10297",
       gender: "Female",
       dob: "1974-12-11",
-      paymentCategory: "Government",
+      paymentCategory: "Corporate",
       corporateName: "Ministry of Health",
       phone: "0710505050",
     },
@@ -554,7 +555,7 @@ const seed = [
     discountTotal: 0,
     copayment: 0,
     grandTotal: 8950,
-    paymentMethod: "Government",
+    paymentMethod: "Corporate",
     providerAccount: "ACC-2024-0005",
     status: "Interim",
     createdAt: "2026-05-20T10:05:00",
@@ -592,21 +593,12 @@ const seed = [
   },
 ];
 
-let invoiceCounter = seed.length + 1;
-let billCounter = 1;
-
 export const generateInvoiceId = () => {
-  const d = new Date();
-  const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const seq = String(invoiceCounter++).padStart(4, "0");
-  return `INV-${dateStr}-${seq}`;
+  return generateInvoiceNo();
 };
 
 export const generateBillId = (prefix = "BILL") => {
-  const d = new Date();
-  const dateStr = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const seq = String(billCounter++).padStart(4, "0");
-  return `${prefix}-${dateStr}-${seq}`;
+  return generateBillNo(prefix);
 };
 
 export const useInvoiceStore = create((set) => ({
