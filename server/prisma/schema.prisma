@@ -780,6 +780,7 @@ model Drug {
   purchaseOrderItems PurchaseOrderItem[]
   stockMovements    StockMovement[]
   stockAdjustments  StockAdjustment[] @relation("DrugStockAdjustments")
+  stockAdjustmentItems StockAdjustmentItem[]
   transferItems     StockTransferItem[]
   saleItems         SaleItem[]
   supplierReturnItems SupplierReturnItem[]

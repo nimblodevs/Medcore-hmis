@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import {
-  TrendingUp, Wallet, CreditCard, Send, Clock, Siren,
+  TrendingUp, Wallet, Send, Clock, Siren,
   CheckCircle2, AlertTriangle, Building2, ShieldCheck, Landmark,
-  ReceiptText, ChevronRight, FileText, CheckCheck, DollarSign, Ban,
-  BarChart3, ArrowUpRight, Gauge,
+  ReceiptText, ChevronRight, FileText, CheckCheck, DollarSign,
+  BarChart3, Gauge,
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useCreditPaymentStore } from "../../store/creditPaymentStore";

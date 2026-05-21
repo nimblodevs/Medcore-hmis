@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { purchaseOrderApi, supplierApi } from '../services/pharmacy.api';
+import { purchaseOrderApi } from '../services/pharmacy.api';
 import { usePharmacyStore } from '../store/pharmacy.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   Package,
   CheckCircle,
   Clock,
+  Eye,
   XCircle,
   FileText,
 } from 'lucide-react';
@@ -23,19 +24,19 @@ import {
 const PurchasesPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   
-  const { openModal, setPurchaseOrderSupplier, clearPurchaseOrderDraft, purchaseOrderDraft } = usePharmacyStore();
+  const { openModal, clearPurchaseOrderDraft, purchaseOrderDraft } = usePharmacyStore();
 
   // Fetch purchase orders
   const { data: poData, isLoading: poLoading, refetch } = useQuery({
     queryKey: ['purchase-orders', { status: statusFilter !== 'ALL' ? statusFilter : undefined }],
     queryFn: () => purchaseOrderApi.getAll(statusFilter !== 'ALL' ? { status: statusFilter } : {}).then(res => res.data),
   });
-
-  // Fetch suppliers for dropdown
-  const { data: suppliersData } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => supplierApi.getAll().then(res => res.data),
-  });
+  const purchaseOrders = Array.isArray(poData?.data)
+    ? poData.data
+    : Array.isArray(poData)
+      ? poData
+      : [];
+  const pendingApprovals = purchaseOrders.filter(po => po.status === 'SUBMITTED');
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -133,14 +134,14 @@ const PurchasesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {poData?.data?.length === 0 ? (
+                  {purchaseOrders.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-muted-foreground">
                         No purchase orders found
                       </td>
                     </tr>
                   ) : (
-                    poData?.data?.map((po) => (
+                    purchaseOrders.map((po) => (
                       <tr key={po.id} className="border-b hover:bg-muted/50">
                         <td className="p-3 font-mono text-sm">{po.orderNumber}</td>
                         <td className="p-3 font-medium">{po.supplier?.name}</td>
@@ -207,7 +208,7 @@ const PurchasesPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {poData?.data?.filter(po => po.status === 'SUBMITTED').length === 0 ? (
+          {pendingApprovals.length === 0 ? (
             <p className="text-muted-foreground">No pending approvals</p>
           ) : (
             <div className="rounded-md border">
@@ -222,9 +223,7 @@ const PurchasesPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {poData?.data
-                    .filter(po => po.status === 'SUBMITTED')
-                    .map((po) => (
+                  {pendingApprovals.map((po) => (
                       <tr key={po.id} className="border-b hover:bg-muted/50">
                         <td className="p-3 font-mono text-sm">{po.orderNumber}</td>
                         <td className="p-3">{po.supplier?.name}</td>
@@ -260,7 +259,7 @@ const PurchasesPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Draft POs</p>
                 <p className="text-2xl font-bold">
-                  {poData?.data?.filter(po => po.status === 'DRAFT').length || 0}
+                  {purchaseOrders.filter(po => po.status === 'DRAFT').length}
                 </p>
               </div>
             </div>
@@ -274,7 +273,7 @@ const PurchasesPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Pending Approval</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {poData?.data?.filter(po => po.status === 'SUBMITTED').length || 0}
+                  {pendingApprovals.length}
                 </p>
               </div>
             </div>
@@ -288,13 +287,13 @@ const PurchasesPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Received This Month</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {poData?.data?.filter(po => {
+                  {purchaseOrders.filter(po => {
                     const now = new Date();
                     const receivedDate = new Date(po.receivedAt);
                     return po.status === 'FULLY_RECEIVED' && 
                            receivedDate.getMonth() === now.getMonth() &&
                            receivedDate.getFullYear() === now.getFullYear();
-                  }).length || 0}
+                  }).length}
                 </p>
               </div>
             </div>
@@ -308,7 +307,7 @@ const PurchasesPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Cancelled</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {poData?.data?.filter(po => po.status === 'CANCELLED').length || 0}
+                  {purchaseOrders.filter(po => po.status === 'CANCELLED').length}
                 </p>
               </div>
             </div>

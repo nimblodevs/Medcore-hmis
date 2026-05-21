@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Building2, Plus, Search, X, ChevronRight, Phone, Mail,
+  Building2, Plus, Search, X, Phone, Mail,
   MapPin, User, CreditCard, AlertCircle, CheckCircle2,
-  Ban, Eye, Edit2, TrendingUp, Wallet, FileText, Clock,
+  Ban, Eye, Edit2, TrendingUp, Wallet, Clock,
 } from "lucide-react";
 import { mockProviders } from "../../constants/mockDebtors";
 

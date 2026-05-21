@@ -1,8 +1,6 @@
-import React from 'react';
 import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { storeApi, batchApi } from '../services/pharmacy.api';
-import { Badge } from '@/components/ui/badge';
 import { Package, AlertTriangle, Clock, TrendingUp, Box } from 'lucide-react';
 
 /**
@@ -34,8 +32,8 @@ const StockPage = () => {
     );
   }
   
-  const stores = storesData?.data || [];
-  const batches = batchesData?.data || [];
+  const stores = Array.isArray(storesData?.data) ? storesData.data : Array.isArray(storesData) ? storesData : [];
+  const batches = Array.isArray(batchesData?.data) ? batchesData.data : Array.isArray(batchesData) ? batchesData : [];
   
   // Group batches by store
   const stockByStore = stores.map((store) => ({

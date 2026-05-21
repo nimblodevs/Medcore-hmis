@@ -56,7 +56,7 @@ const initialState = {
   sidebarOpen: true,
 };
 
-export const usePharmacyStore = create((set, get) => ({
+export const usePharmacyStore = create((set) => ({
   ...initialState,
   
   // Filter Actions
@@ -64,7 +64,7 @@ export const usePharmacyStore = create((set, get) => ({
     drugFilters: { ...state.drugFilters, ...filters }
   })),
   
-  resetDrugFilters: () => set((state) => ({
+  resetDrugFilters: () => set(() => ({
     drugFilters: initialState.drugFilters
   })),
   
@@ -130,7 +130,7 @@ export const usePharmacyStore = create((set, get) => ({
     dispensingCart: { ...state.dispensingCart, notes }
   })),
   
-  clearDispensingCart: () => set((state) => ({
+  clearDispensingCart: () => set(() => ({
     dispensingCart: initialState.dispensingCart
   })),
   
@@ -153,7 +153,7 @@ export const usePharmacyStore = create((set, get) => ({
     }
   })),
   
-  clearPurchaseOrderDraft: () => set((state) => ({
+  clearPurchaseOrderDraft: () => set(() => ({
     purchaseOrderDraft: initialState.purchaseOrderDraft
   })),
   

@@ -100,16 +100,540 @@ async function seedSuperAdmin() {
   return user;
 }
 
+async function seedFacility(adminUser) {
+  const tenant = await prisma.tenant.upsert({
+    where: { code: "MEDCORE" },
+    update: {
+      name: "MediCore General Hospital",
+      legalName: "MediCore General Hospital Ltd",
+      phone: "+254 722 000 111",
+      email: "info@medcore.local",
+      city: "Nairobi",
+      country: "Kenya",
+      timezone: "Africa/Nairobi",
+      isActive: true,
+      updatedById: adminUser.id
+    },
+    create: {
+      name: "MediCore General Hospital",
+      code: "MEDCORE",
+      legalName: "MediCore General Hospital Ltd",
+      registrationNo: "MFL-13104",
+      phone: "+254 722 000 111",
+      email: "info@medcore.local",
+      addressLine1: "P.O. Box 12345-00100",
+      city: "Nairobi",
+      country: "Kenya",
+      timezone: "Africa/Nairobi",
+      createdById: adminUser.id
+    }
+  });
+
+  const branch = await prisma.branch.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: "MAIN" } },
+    update: {
+      name: "Main Outpatient Branch",
+      phone: "+254 722 000 111",
+      city: "Nairobi",
+      country: "Kenya",
+      isActive: true,
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      name: "Main Outpatient Branch",
+      code: "MAIN",
+      branchType: "OUTPATIENT",
+      phone: "+254 722 000 111",
+      email: "main@medcore.local",
+      addressLine1: "MediCore Plaza, Upper Hill",
+      city: "Nairobi",
+      country: "Kenya",
+      createdById: adminUser.id
+    }
+  });
+
+  if (!adminUser.tenantId) {
+    await prisma.user.update({
+      where: { id: adminUser.id },
+      data: {
+        tenantId: tenant.id,
+        staffId: "ADM-001",
+        jobTitle: "System Administrator",
+        updatedById: adminUser.id
+      }
+    });
+  }
+
+  return { tenant, branch };
+}
+
+async function seedPharmacyData({ tenant, branch, adminUser }) {
+  const stores = {};
+  for (const store of [
+    { code: "MAIN-PHARM", name: "Main Pharmacy", storeType: "MAIN" },
+    { code: "OPD-PHARM", name: "OPD Dispensing Store", storeType: "DISPENSARY" },
+    { code: "WARD-PHARM", name: "Ward Pharmacy", storeType: "WARD" }
+  ]) {
+    stores[store.code] = await prisma.pharmacyStore.upsert({
+      where: { tenantId_branchId_code: { tenantId: tenant.id, branchId: branch.id, code: store.code } },
+      update: {
+        name: store.name,
+        storeType: store.storeType,
+        isActive: true,
+        updatedById: adminUser.id
+      },
+      create: {
+        tenantId: tenant.id,
+        branchId: branch.id,
+        name: store.name,
+        code: store.code,
+        description: `${store.name} seed location`,
+        storeType: store.storeType,
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  const categories = {};
+  for (const category of [
+    { code: "ANALG", name: "Analgesics", description: "Pain and fever medicines" },
+    { code: "ANTIB", name: "Antibiotics", description: "Antibacterial medicines" },
+    { code: "RESP", name: "Respiratory", description: "Respiratory and allergy medicines" },
+    { code: "GI", name: "Gastrointestinal", description: "Digestive system medicines" }
+  ]) {
+    categories[category.code] = await prisma.drugCategory.upsert({
+      where: { tenantId_code: { tenantId: tenant.id, code: category.code } },
+      update: {
+        name: category.name,
+        description: category.description,
+        isActive: true,
+        updatedById: adminUser.id
+      },
+      create: {
+        tenantId: tenant.id,
+        name: category.name,
+        code: category.code,
+        description: category.description,
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  const suppliers = {};
+  for (const supplier of [
+    {
+      code: "SUP-MED-001",
+      name: "Kenya Medical Supplies Authority",
+      contactPerson: "Procurement Desk",
+      phone: "+254 700 100 200",
+      email: "orders@kemsa.local",
+      paymentTerms: 30,
+      creditLimit: "2500000",
+      rating: "A"
+    },
+    {
+      code: "SUP-PHARMA-002",
+      name: "Nairobi Pharma Distributors",
+      contactPerson: "Grace Wanjiku",
+      phone: "+254 711 234 567",
+      email: "sales@nairobipharma.local",
+      paymentTerms: 14,
+      creditLimit: "750000",
+      rating: "B"
+    }
+  ]) {
+    suppliers[supplier.code] = await prisma.supplier.upsert({
+      where: { tenantId_code: { tenantId: tenant.id, code: supplier.code } },
+      update: {
+        name: supplier.name,
+        contactPerson: supplier.contactPerson,
+        phone: supplier.phone,
+        email: supplier.email,
+        paymentTerms: supplier.paymentTerms,
+        creditLimit: supplier.creditLimit,
+        rating: supplier.rating,
+        isActive: true,
+        updatedById: adminUser.id
+      },
+      create: {
+        tenantId: tenant.id,
+        name: supplier.name,
+        code: supplier.code,
+        contactPerson: supplier.contactPerson,
+        phone: supplier.phone,
+        email: supplier.email,
+        address: "Nairobi, Kenya",
+        city: "Nairobi",
+        country: "Kenya",
+        paymentTerms: supplier.paymentTerms,
+        creditLimit: supplier.creditLimit,
+        rating: supplier.rating,
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  const drugFixtures = [
+    {
+      code: "PCM-500-TAB",
+      name: "Paracetamol 500mg Tablets",
+      genericName: "Paracetamol",
+      category: "ANALG",
+      dosageForm: "Tablet",
+      strength: "500mg",
+      unitOfMeasure: "Tablet",
+      packSize: 100,
+      reorderLevel: 200,
+      maxStockLevel: 5000,
+      standardPrice: "1.20",
+      sellingPrice: "3.00",
+      requiresPrescription: false
+    },
+    {
+      code: "AMX-500-CAP",
+      name: "Amoxicillin 500mg Capsules",
+      genericName: "Amoxicillin",
+      category: "ANTIB",
+      dosageForm: "Capsule",
+      strength: "500mg",
+      unitOfMeasure: "Capsule",
+      packSize: 100,
+      reorderLevel: 150,
+      maxStockLevel: 3000,
+      standardPrice: "6.50",
+      sellingPrice: "12.00",
+      requiresPrescription: true
+    },
+    {
+      code: "CET-10-TAB",
+      name: "Cetirizine 10mg Tablets",
+      genericName: "Cetirizine",
+      category: "RESP",
+      dosageForm: "Tablet",
+      strength: "10mg",
+      unitOfMeasure: "Tablet",
+      packSize: 30,
+      reorderLevel: 120,
+      maxStockLevel: 1500,
+      standardPrice: "2.00",
+      sellingPrice: "5.00",
+      requiresPrescription: false
+    },
+    {
+      code: "ORS-SACHET",
+      name: "Oral Rehydration Salts Sachet",
+      genericName: "Oral Rehydration Salts",
+      category: "GI",
+      dosageForm: "Sachet",
+      strength: "20.5g",
+      unitOfMeasure: "Sachet",
+      packSize: 100,
+      reorderLevel: 100,
+      maxStockLevel: 2000,
+      standardPrice: "8.00",
+      sellingPrice: "15.00",
+      requiresPrescription: false
+    }
+  ];
+
+  const drugs = {};
+  for (const drug of drugFixtures) {
+    drugs[drug.code] = await prisma.drug.upsert({
+      where: { tenantId_drugCode: { tenantId: tenant.id, drugCode: drug.code } },
+      update: {
+        categoryId: categories[drug.category].id,
+        name: drug.name,
+        genericName: drug.genericName,
+        dosageForm: drug.dosageForm,
+        strength: drug.strength,
+        unitOfMeasure: drug.unitOfMeasure,
+        packSize: drug.packSize,
+        reorderLevel: drug.reorderLevel,
+        maxStockLevel: drug.maxStockLevel,
+        standardPrice: drug.standardPrice,
+        sellingPrice: drug.sellingPrice,
+        requiresPrescription: drug.requiresPrescription,
+        isActive: true,
+        updatedById: adminUser.id
+      },
+      create: {
+        tenantId: tenant.id,
+        categoryId: categories[drug.category].id,
+        name: drug.name,
+        genericName: drug.genericName,
+        drugCode: drug.code,
+        dosageForm: drug.dosageForm,
+        strength: drug.strength,
+        unitOfMeasure: drug.unitOfMeasure,
+        packSize: drug.packSize,
+        manufacturer: "MediCore Seed Manufacturer",
+        requiresPrescription: drug.requiresPrescription,
+        storageConditions: "Room temperature",
+        shelfLife: 24,
+        reorderLevel: drug.reorderLevel,
+        maxStockLevel: drug.maxStockLevel,
+        standardPrice: drug.standardPrice,
+        sellingPrice: drug.sellingPrice,
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  const batchFixtures = [
+    { drug: "PCM-500-TAB", batch: "PCM2401A", supplier: "SUP-MED-001", store: "MAIN-PHARM", qty: 1200, cost: "1.20", price: "3.00", expiryMonths: 18 },
+    { drug: "AMX-500-CAP", batch: "AMX2402B", supplier: "SUP-PHARMA-002", store: "MAIN-PHARM", qty: 650, cost: "6.50", price: "12.00", expiryMonths: 10 },
+    { drug: "CET-10-TAB", batch: "CET2403C", supplier: "SUP-PHARMA-002", store: "OPD-PHARM", qty: 480, cost: "2.00", price: "5.00", expiryMonths: 8 },
+    { drug: "ORS-SACHET", batch: "ORS2404D", supplier: "SUP-MED-001", store: "OPD-PHARM", qty: 900, cost: "8.00", price: "15.00", expiryMonths: 14 }
+  ];
+
+  const batches = {};
+  const now = new Date();
+  for (const item of batchFixtures) {
+    const expiryDate = new Date(now);
+    expiryDate.setMonth(expiryDate.getMonth() + item.expiryMonths);
+    const manufactureDate = new Date(now);
+    manufactureDate.setMonth(manufactureDate.getMonth() - 2);
+
+    const drug = drugs[item.drug];
+    const key = `${item.drug}:${item.batch}`;
+    batches[key] = await prisma.drugBatch.upsert({
+      where: { tenantId_drugId_batchNumber: { tenantId: tenant.id, drugId: drug.id, batchNumber: item.batch } },
+      update: {
+        supplierId: suppliers[item.supplier].id,
+        storeId: stores[item.store].id,
+        manufactureDate,
+        expiryDate,
+        quantityReceived: item.qty,
+        currentStock: item.qty,
+        costPrice: item.cost,
+        sellingPrice: item.price,
+        updatedById: adminUser.id
+      },
+      create: {
+        tenantId: tenant.id,
+        drugId: drug.id,
+        batchNumber: item.batch,
+        supplierId: suppliers[item.supplier].id,
+        storeId: stores[item.store].id,
+        manufactureDate,
+        expiryDate,
+        quantityReceived: item.qty,
+        currentStock: item.qty,
+        costPrice: item.cost,
+        sellingPrice: item.price,
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  await prisma.stockMovement.deleteMany({
+    where: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      referenceType: "SEED"
+    }
+  });
+
+  for (const item of batchFixtures) {
+    const drug = drugs[item.drug];
+    const batch = batches[`${item.drug}:${item.batch}`];
+    await prisma.stockMovement.create({
+      data: {
+        tenantId: tenant.id,
+        branchId: branch.id,
+        storeId: stores[item.store].id,
+        drugId: drug.id,
+        batchId: batch.id,
+        movementType: "PURCHASE_RECEIPT",
+        quantity: item.qty,
+        quantityBefore: 0,
+        quantityAfter: item.qty,
+        costAmount: (Number(item.cost) * item.qty).toFixed(2),
+        referenceType: "SEED",
+        notes: "Opening pharmacy seed stock",
+        createdById: adminUser.id
+      }
+    });
+  }
+
+  const purchaseOrder = await prisma.purchaseOrder.upsert({
+    where: { tenantId_orderNo: { tenantId: tenant.id, orderNo: "PO-SEED-0001" } },
+    update: {
+      supplierId: suppliers["SUP-PHARMA-002"].id,
+      status: "SUBMITTED",
+      subtotal: "9650.00",
+      totalAmount: "9650.00",
+      submittedById: adminUser.id,
+      submittedAt: now,
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      supplierId: suppliers["SUP-PHARMA-002"].id,
+      orderNo: "PO-SEED-0001",
+      orderDate: now,
+      expectedDeliveryDate: new Date(now.getTime() + 7 * 86400000),
+      status: "SUBMITTED",
+      subtotal: "9650.00",
+      discountAmount: "0.00",
+      taxAmount: "0.00",
+      totalAmount: "9650.00",
+      notes: "Seed purchase order awaiting approval",
+      submittedById: adminUser.id,
+      submittedAt: now,
+      createdById: adminUser.id
+    }
+  });
+
+  await prisma.purchaseOrderItem.deleteMany({ where: { purchaseOrderId: purchaseOrder.id } });
+  await prisma.purchaseOrderItem.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        purchaseOrderId: purchaseOrder.id,
+        drugId: drugs["AMX-500-CAP"].id,
+        quantityOrdered: 500,
+        unitCost: "6.50",
+        taxAmount: "0.00",
+        totalAmount: "3250.00",
+        createdById: adminUser.id
+      },
+      {
+        tenantId: tenant.id,
+        purchaseOrderId: purchaseOrder.id,
+        drugId: drugs["ORS-SACHET"].id,
+        quantityOrdered: 800,
+        unitCost: "8.00",
+        taxAmount: "0.00",
+        totalAmount: "6400.00",
+        createdById: adminUser.id
+      }
+    ]
+  });
+
+  const patient = await prisma.patient.upsert({
+    where: { tenantId_uhid: { tenantId: tenant.id, uhid: "UHID-SEED-001" } },
+    update: {
+      firstName: "Amina",
+      lastName: "Otieno",
+      phone: "+254 733 456 789",
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      uhid: "UHID-SEED-001",
+      firstName: "Amina",
+      lastName: "Otieno",
+      dateOfBirth: new Date("1991-04-12"),
+      gender: "Female",
+      phone: "+254 733 456 789",
+      createdById: adminUser.id
+    }
+  });
+
+  const visit = await prisma.visit.upsert({
+    where: { tenantId_visitNo: { tenantId: tenant.id, visitNo: "VISIT-SEED-001" } },
+    update: {
+      patientId: patient.id,
+      visitDate: now,
+      doctorName: "Dr. Seed Clinician",
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      patientId: patient.id,
+      visitNo: "VISIT-SEED-001",
+      visitDate: now,
+      visitType: "OUTPATIENT",
+      doctorName: "Dr. Seed Clinician",
+      createdById: adminUser.id
+    }
+  });
+
+  const prescription = await prisma.prescription.upsert({
+    where: { tenantId_prescriptionNo: { tenantId: tenant.id, prescriptionNo: "RX-SEED-0001" } },
+    update: {
+      patientId: patient.id,
+      visitId: visit.id,
+      prescriptionDate: now,
+      prescriberName: "Dr. Seed Clinician",
+      diagnosis: "Upper respiratory tract infection",
+      status: "PENDING",
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      patientId: patient.id,
+      visitId: visit.id,
+      prescriptionNo: "RX-SEED-0001",
+      prescriptionDate: now,
+      prescriberName: "Dr. Seed Clinician",
+      diagnosis: "Upper respiratory tract infection",
+      notes: "Seed prescription for pharmacy dispensing workflow",
+      status: "PENDING",
+      createdById: adminUser.id
+    }
+  });
+
+  await prisma.prescriptionItem.deleteMany({ where: { prescriptionId: prescription.id } });
+  await prisma.prescriptionItem.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        prescriptionId: prescription.id,
+        drugId: drugs["AMX-500-CAP"].id,
+        dosage: "1 capsule",
+        frequency: "TDS",
+        duration: 5,
+        durationUnit: "DAYS",
+        instructions: "Take after meals",
+        quantityPrescribed: 15,
+        unitPrice: "12.00",
+        totalAmount: "180.00",
+        createdById: adminUser.id
+      },
+      {
+        tenantId: tenant.id,
+        prescriptionId: prescription.id,
+        drugId: drugs["CET-10-TAB"].id,
+        dosage: "1 tablet",
+        frequency: "OD",
+        duration: 5,
+        durationUnit: "DAYS",
+        instructions: "Take at night",
+        quantityPrescribed: 5,
+        unitPrice: "5.00",
+        totalAmount: "25.00",
+        createdById: adminUser.id
+      }
+    ]
+  });
+
+  console.log("Pharmacy seed data completed.");
+}
+
 async function main() {
+  console.log("Connecting to database...");
+  await prisma.$connect();
+  console.log("Database connected successfully. Starting seed...");
+
   await seedPermissions();
   await seedRoles();
-  await seedSuperAdmin();
+  const adminUser = await seedSuperAdmin();
+  const facility = await seedFacility(adminUser);
+  await seedPharmacyData({ ...facility, adminUser });
   console.log("Seed completed successfully.");
 }
 
 main()
   .catch((error) => {
-    console.error(error);
+    console.error("Seed failed.");
+    console.error(error.message);
     process.exit(1);
   })
   .finally(async () => {

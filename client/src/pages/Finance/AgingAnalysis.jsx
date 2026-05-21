@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   BarChart3, AlertTriangle, AlertCircle, CheckCircle2, Clock,
   TrendingDown, Building2, ShieldCheck, Landmark, X, ChevronDown,
-  ChevronUp, ArrowUpDown, FileText, Info, Siren,
+  ChevronUp, Info, Siren,
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { mockProviders } from "../../constants/mockDebtors";

@@ -9,7 +9,7 @@ export const postJson = async (path, payload) => {
     body: JSON.stringify(payload || {})
   });
 
-  let body = null;
+  let body;
   try {
     body = await response.json();
   } catch {
@@ -24,4 +24,3 @@ export const postJson = async (path, payload) => {
 };
 
 export { API_BASE_URL };
-
