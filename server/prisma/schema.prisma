@@ -103,6 +103,29 @@ model Tenant {
   receipts           Receipt[]
   claims             Claim[]
   auditLogs          AuditLog[]
+  // Pharmacy module relations
+  drugCategories     DrugCategory[]
+  drugs              Drug[]
+  drugBatches        DrugBatch[]
+  pharmacyStores     PharmacyStore[]
+  stockMovements     StockMovement[]
+  prescriptions      Prescription[]
+  prescriptionItems  PrescriptionItem[]
+  dispenses          Dispense[]
+  dispenseItems      DispenseItem[]
+  suppliers          Supplier[]
+  purchaseOrders     PurchaseOrder[]
+  purchaseOrderItems PurchaseOrderItem[]
+  goodsReceivedNotes GoodsReceivedNote[]
+  goodsReceivedNoteItems GoodsReceivedNoteItem[]
+  stockTransfers     StockTransfer[]
+  stockTransferItems StockTransferItem[]
+  stockAdjustments   StockAdjustment[]
+  stockAdjustmentItems StockAdjustmentItem[]
+  sales              Sale[]
+  saleItems          SaleItem[]
+  supplierReturns    SupplierReturn[]
+  supplierReturnItems SupplierReturnItem[]
 }
 
 model Branch {
@@ -143,6 +166,18 @@ model Branch {
   receipts           Receipt[]
   claims             Claim[]
   auditLogs          AuditLog[]
+  // Pharmacy module relations
+  pharmacyStores     PharmacyStore[]
+  stockMovements     StockMovement[]
+  prescriptions      Prescription[]
+  dispenses          Dispense[]
+  purchaseOrders     PurchaseOrder[]
+  goodsReceivedNotes GoodsReceivedNote[]
+  stockAdjustments   StockAdjustment[]
+  sales              Sale[]
+  supplierReturns    SupplierReturn[]
+  transfersFrom      StockTransfer[]   @relation("TransferFromBranch")
+  transfersTo        StockTransfer[]   @relation("TransferToBranch")
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -339,6 +374,7 @@ model Patient {
   payments           Payment[]
   receipts           Receipt[]
   claims             Claim[]
+  prescriptions      Prescription[]
 
   @@unique([tenantId, uhid])
   @@index([tenantId, branchId])
@@ -363,6 +399,7 @@ model Visit {
   patient            Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
   invoices           Invoice[]
   claims             Claim[]
+  prescriptions      Prescription[]
 
   @@unique([tenantId, visitNo])
   @@index([tenantId, branchId, patientId])
@@ -407,6 +444,7 @@ model InsuranceScheme {
   branch                Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
   invoices              Invoice[]
   claims                Claim[]
+  dispenses             Dispense[]
 
   @@unique([tenantId, schemeCode])
   @@index([tenantId, branchId])
@@ -645,4 +683,687 @@ model ReferenceSequence {
 
   @@unique([scopeKey, type, dateKey])
   @@index([type, dateKey])
+}
+
+// ==================== PHARMACY MODULE ====================
+
+enum StockMovementType {
+  PURCHASE_RECEIPT
+  DISPENSE
+  SALE
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  EXPIRY_WRITEOFF
+  RETURN_IN
+  RETURN_OUT
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PARTIALLY_RECEIVED
+  FULLY_RECEIVED
+  CANCELLED
+}
+
+enum StockAdjustmentReason {
+  DAMAGED
+  EXPIRED
+  LOST
+  COUNT_ERROR
+  PRICE_ADJUSTMENT
+  QUALITY_ISSUE
+  OTHER
+}
+
+model DrugCategory {
+  id          String     @id @default(uuid()) @db.Uuid
+  tenantId    String     @db.Uuid
+  name        String
+  code        String
+  description String?
+  parentId    String?    @db.Uuid
+  isActive    Boolean    @default(true)
+  createdById String?    @db.Uuid
+  updatedById String?    @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent      DrugCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    DrugCategory[] @relation("CategoryHierarchy")
+  drugs       Drug[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([parentId])
+}
+
+model Drug {
+  id                String      @id @default(uuid()) @db.Uuid
+  tenantId          String      @db.Uuid
+  categoryId        String?     @db.Uuid
+  name              String
+  genericName       String?
+  brandName         String?
+  drugCode          String
+  barcode           String?
+  dosageForm        String?     // Tablet, Capsule, Syrup, Injection, etc.
+  strength          String?     // 500mg, 250mg/5ml, etc.
+  unitOfMeasure     String      // Tablet, Bottle, Box, Strip, etc.
+  packSize          Int?        // Number of units per pack
+  manufacturer      String?
+  requiresPrescription Boolean  @default(false)
+  isControlledSubstance Boolean @default(false)
+  storageConditions String?     // Room temperature, Refrigerate, etc.
+  shelfLife         Int?        // Shelf life in months
+  reorderLevel      Int         @default(10)
+  maxStockLevel     Int?
+  standardPrice     Decimal     @default(0) @db.Decimal(14, 2)
+  sellingPrice      Decimal     @default(0) @db.Decimal(14, 2)
+  taxRate           Decimal     @default(0) @db.Decimal(5, 2)
+  isActive          Boolean     @default(true)
+  notes             String?
+  createdById       String?     @db.Uuid
+  updatedById       String?     @db.Uuid
+  deletedAt         DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  tenant            Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category          DrugCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  batches           DrugBatch[]
+  prescriptionItems PrescriptionItem[]
+  dispenseItems     DispenseItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockMovements    StockMovement[]
+  stockAdjustments  StockAdjustment[] @relation("DrugStockAdjustments")
+  transferItems     StockTransferItem[]
+  saleItems         SaleItem[]
+  supplierReturnItems SupplierReturnItem[]
+  grnItems          GoodsReceivedNoteItem[]
+
+  @@unique([tenantId, drugCode])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([barcode])
+}
+
+model DrugBatch {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  drugId          String   @db.Uuid
+  batchNumber     String
+  supplierId      String?  @db.Uuid
+  storeId         String?  @db.Uuid
+  manufactureDate DateTime?
+  expiryDate      DateTime
+  quantityReceived Int     @default(0)
+  quantityDispensed Int    @default(0)
+  quantitySold    Int      @default(0)
+  quantityAdjusted Int     @default(0)
+  quantityTransferredOut Int @default(0)
+  quantityTransferredIn Int @default(0)
+  quantityReturned Int     @default(0)
+  quantityExpired Int       @default(0)
+  currentStock    Int
+  costPrice       Decimal  @db.Decimal(14, 2)
+  sellingPrice    Decimal  @db.Decimal(14, 2)
+  isLocked        Boolean  @default(false)
+  notes           String?
+  createdById     String?  @db.Uuid
+  updatedById     String?  @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  store           PharmacyStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  stockMovements  StockMovement[]
+  dispenseItems   DispenseItem[]
+  saleItems       SaleItem[]
+  grnItems        GoodsReceivedNoteItem[]
+  transferItems   StockTransferItem[]
+  adjustmentItems StockAdjustmentItem[]
+  supplierReturnItems SupplierReturnItem[]
+
+  @@unique([tenantId, drugId, batchNumber])
+  @@index([tenantId, drugId])
+  @@index([expiryDate])
+  @@index([storeId])
+}
+
+model PharmacyStore {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  branchId    String   @db.Uuid
+  name        String
+  code        String
+  description String?
+  storeType   String   @default("MAIN") // MAIN, SATELLITE, WARD, DISPENSARY
+  isActive    Boolean  @default(true)
+  createdById String?  @db.Uuid
+  updatedById String?  @db.Uuid
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  batches     DrugBatch[]
+  stockMovements StockMovement[]
+  transfersFrom StockTransfer[] @relation("TransferSource")
+  transfersTo   StockTransfer[] @relation("TransferDestination")
+  adjustments StockAdjustment[]
+
+  @@unique([tenantId, branchId, code])
+  @@index([tenantId, branchId])
+}
+
+model StockMovement {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+  branchId        String            @db.Uuid
+  storeId         String?           @db.Uuid
+  drugId          String            @db.Uuid
+  batchId         String            @db.Uuid
+  movementType    StockMovementType
+  quantity        Int
+  quantityBefore  Int
+  quantityAfter   Int
+  costAmount      Decimal           @db.Decimal(14, 2)
+  referenceType   String?           // PRESCRIPTION, SALE, PURCHASE_ORDER, TRANSFER, ADJUSTMENT
+  referenceId     String?           @db.Uuid
+  notes           String?
+  createdById     String?           @db.Uuid
+  createdAt       DateTime          @default(now())
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch            @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  store           PharmacyStore?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  drug            Drug              @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId])
+  @@index([drugId, createdAt])
+  @@index([batchId])
+  @@index([referenceType, referenceId])
+}
+
+model Prescription {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  branchId        String   @db.Uuid
+  patientId       String   @db.Uuid
+  visitId         String   @db.Uuid
+  prescriptionNo  String
+  prescriptionDate DateTime
+  prescriberName  String
+  prescriberId    String?  @db.Uuid
+  diagnosis       String?
+  notes           String?
+  isDispened      Boolean  @default(false)
+  dispensedAt     DateTime?
+  dispensedById   String?  @db.Uuid
+  status          String   @default("PENDING") // PENDING, PARTIALLY_DISPENSED, DISPENSED, CANCELLED
+  createdById     String?  @db.Uuid
+  updatedById     String?  @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  visit           Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  items           PrescriptionItem[]
+  dispenses       Dispense[]
+
+  @@unique([tenantId, prescriptionNo])
+  @@index([tenantId, branchId, patientId])
+  @@index([visitId])
+}
+
+model PrescriptionItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  prescriptionId  String   @db.Uuid
+  drugId          String   @db.Uuid
+  dosage          String?  // 1 tablet, 5ml, etc.
+  frequency       String?  // OD, BD, TDS, QID, SOS, etc.
+  duration        Int?     // Duration in days
+  durationUnit    String?  // DAYS, WEEKS, MONTHS
+  instructions    String?  // Take after food, etc.
+  quantityPrescribed Int
+  quantityDispensed Int   @default(0)
+  unitPrice       Decimal @db.Decimal(14, 2)
+  totalAmount     Decimal @db.Decimal(14, 2)
+  isSubstituted   Boolean @default(false)
+  substitutedDrugId String? @db.Uuid
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  dispenseItems   DispenseItem[]
+
+  @@index([prescriptionId])
+  @@index([drugId])
+}
+
+model Dispense {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  branchId        String   @db.Uuid
+  prescriptionId  String?  @db.Uuid
+  saleId          String?  @db.Uuid
+  dispenseNo      String
+  dispenseDate    DateTime
+  billingType     BillingType
+  insuranceSchemeId String? @db.Uuid
+  authorizationNo String?
+  grossAmount     Decimal  @db.Decimal(14, 2)
+  discountAmount  Decimal  @default(0) @db.Decimal(14, 2)
+  netAmount       Decimal  @db.Decimal(14, 2)
+  amountPaid      Decimal  @default(0) @db.Decimal(14, 2)
+  outstandingAmount Decimal @db.Decimal(14, 2)
+  paymentStatus   String   @default("PENDING") // PENDING, PARTIALLY_PAID, PAID
+  notes           String?
+  dispensedById   String?  @db.Uuid
+  verifiedById    String?  @db.Uuid
+  cancelledById   String?  @db.Uuid
+  cancelledAt     DateTime?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  prescription    Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
+  insuranceScheme InsuranceScheme? @relation(fields: [insuranceSchemeId], references: [id], onDelete: SetNull)
+  items           DispenseItem[]
+
+  @@unique([tenantId, dispenseNo])
+  @@index([tenantId, branchId])
+  @@index([prescriptionId])
+}
+
+model DispenseItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  dispenseId      String   @db.Uuid
+  prescriptionItemId String? @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(14, 2)
+  discountPercent Decimal  @default(0) @db.Decimal(5, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dispense        Dispense @relation(fields: [dispenseId], references: [id], onDelete: Cascade)
+  prescriptionItem PrescriptionItem? @relation(fields: [prescriptionItemId], references: [id], onDelete: SetNull)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([dispenseId])
+  @@index([batchId])
+}
+
+model Supplier {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  name            String
+  code            String
+  contactPerson   String?
+  phone           String?
+  email           String?
+  address         String?
+  city            String?
+  country         String?
+  taxId           String?
+  licenseNo       String?
+  paymentTerms    Int?     // Payment terms in days
+  creditLimit     Decimal  @default(0) @db.Decimal(14, 2)
+  rating          String?  // A, B, C
+  isActive        Boolean  @default(true)
+  notes           String?
+  createdById     String?  @db.Uuid
+  updatedById     String?  @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  batches         DrugBatch[]
+  purchaseOrders  PurchaseOrder[]
+  returns         SupplierReturn[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model PurchaseOrder {
+  id              String             @id @default(uuid()) @db.Uuid
+  tenantId        String             @db.Uuid
+  branchId        String             @db.Uuid
+  supplierId      String             @db.Uuid
+  orderNo         String
+  orderDate       DateTime
+  expectedDeliveryDate DateTime?
+  status          PurchaseOrderStatus @default(DRAFT)
+  subtotal        Decimal            @db.Decimal(14, 2)
+  discountAmount  Decimal            @default(0) @db.Decimal(14, 2)
+  taxAmount       Decimal            @default(0) @db.Decimal(14, 2)
+  totalAmount     Decimal            @db.Decimal(14, 2)
+  notes           String?
+  approvedById    String?            @db.Uuid
+  approvedAt      DateTime?
+  submittedById   String?            @db.Uuid
+  submittedAt     DateTime?
+  receivedById    String?            @db.Uuid
+  receivedAt      DateTime?
+  cancelledById   String?            @db.Uuid
+  cancelledAt     DateTime?
+  createdById     String?            @db.Uuid
+  updatedById     String?            @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  supplier        Supplier           @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items           PurchaseOrderItem[]
+  goodsReceivedNotes GoodsReceivedNote[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId, branchId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  purchaseOrderId String   @db.Uuid
+  drugId          String   @db.Uuid
+  quantityOrdered Int
+  quantityReceived Int     @default(0)
+  unitCost        Decimal  @db.Decimal(14, 2)
+  taxRate         Decimal  @default(0) @db.Decimal(5, 2)
+  taxAmount       Decimal  @db.Decimal(14, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  grnItems        GoodsReceivedNoteItem[]
+
+  @@index([purchaseOrderId])
+  @@index([drugId])
+}
+
+model GoodsReceivedNote {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  branchId        String   @db.Uuid
+  purchaseOrderId String   @db.Uuid
+  grnNo           String
+  grnDate         DateTime
+  supplierInvoiceNo String?
+  supplierInvoiceDate DateTime?
+  notes           String?
+  receivedById    String?  @db.Uuid
+  verifiedById    String?  @db.Uuid
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  items           GoodsReceivedNoteItem[]
+
+  @@unique([tenantId, grnNo])
+  @@index([tenantId, branchId])
+  @@index([purchaseOrderId])
+}
+
+model GoodsReceivedNoteItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  grnId           String   @db.Uuid
+  purchaseOrderItemId String @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantityReceived Int
+  quantityAccepted Int
+  quantityRejected Int      @default(0)
+  unitCost        Decimal  @db.Decimal(14, 2)
+  expiryDate      DateTime
+  manufacturingDate DateTime?
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  grn             GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  purchaseOrderItem PurchaseOrderItem @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([grnId])
+  @@index([batchId])
+}
+
+model StockTransfer {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  fromBranchId    String   @db.Uuid
+  toBranchId      String   @db.Uuid
+  fromStoreId     String   @db.Uuid
+  toStoreId       String   @db.Uuid
+  transferNo      String
+  transferDate    DateTime
+  status          String   @default("PENDING") // PENDING, IN_TRANSIT, RECEIVED, CANCELLED
+  notes           String?
+  shippedById     String?  @db.Uuid
+  shippedAt       DateTime?
+  receivedById    String?  @db.Uuid
+  receivedAt      DateTime?
+  approvedById    String?  @db.Uuid
+  approvedAt      DateTime?
+  createdById     String?  @db.Uuid
+  updatedById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fromBranch      Branch   @relation("TransferFromBranch", fields: [fromBranchId], references: [id], onDelete: Cascade)
+  toBranch        Branch   @relation("TransferToBranch", fields: [toBranchId], references: [id], onDelete: Cascade)
+  fromStore       PharmacyStore @relation("TransferSource", fields: [fromStoreId], references: [id], onDelete: Cascade)
+  toStore         PharmacyStore @relation("TransferDestination", fields: [toStoreId], references: [id], onDelete: Cascade)
+  items           StockTransferItem[]
+
+  @@unique([tenantId, transferNo])
+  @@index([tenantId])
+  @@index([fromBranchId, toBranchId])
+  @@index([status])
+}
+
+model StockTransferItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  transferId      String   @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantity        Int
+  quantityReceived Int     @default(0)
+  unitCost        Decimal  @db.Decimal(14, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transfer        StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@index([batchId])
+}
+
+model StockAdjustment {
+  id              String                @id @default(uuid()) @db.Uuid
+  tenantId        String                @db.Uuid
+  branchId        String                @db.Uuid
+  storeId         String?               @db.Uuid
+  adjustmentNo    String
+  adjustmentDate  DateTime
+  reason          StockAdjustmentReason
+  adjustmentType  String                // INCREASE, DECREASE
+  totalQuantity   Int
+  totalValue      Decimal               @db.Decimal(14, 2)
+  notes           String?
+  approvedById    String?               @db.Uuid
+  approvedAt      DateTime?
+  adjustedById    String?               @db.Uuid
+  createdById     String?               @db.Uuid
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch                @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  store           PharmacyStore?        @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  items           StockAdjustmentItem[]
+  drugs           Drug[]                @relation("DrugStockAdjustments")
+
+  @@unique([tenantId, adjustmentNo])
+  @@index([tenantId, branchId])
+  @@index([adjustmentDate])
+}
+
+model StockAdjustmentItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  adjustmentId    String   @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantity        Int
+  quantityBefore  Int
+  quantityAfter   Int
+  unitCost        Decimal  @db.Decimal(14, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adjustment      StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([adjustmentId])
+  @@index([batchId])
+}
+
+model Sale {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  branchId        String   @db.Uuid
+  saleNo          String
+  saleDate        DateTime
+  customerId      String?  @db.Uuid
+  billingType     BillingType
+  insuranceSchemeId String? @db.Uuid
+  authorizationNo String?
+  subtotal        Decimal  @db.Decimal(14, 2)
+  discountAmount  Decimal  @default(0) @db.Decimal(14, 2)
+  taxAmount       Decimal  @default(0) @db.Decimal(14, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  amountPaid      Decimal  @default(0) @db.Decimal(14, 2)
+  outstandingAmount Decimal @db.Decimal(14, 2)
+  paymentStatus   String   @default("PENDING")
+  notes           String?
+  soldById        String?  @db.Uuid
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  items           SaleItem[]
+
+  @@unique([tenantId, saleNo])
+  @@index([tenantId, branchId])
+  @@index([saleDate])
+}
+
+model SaleItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  saleId          String   @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(14, 2)
+  discountPercent Decimal  @default(0) @db.Decimal(5, 2)
+  taxRate         Decimal  @default(0) @db.Decimal(5, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sale            Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@index([batchId])
+}
+
+model SupplierReturn {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  branchId        String   @db.Uuid
+  supplierId      String   @db.Uuid
+  returnNo        String
+  returnDate      DateTime
+  reason          String
+  status          String   @default("PENDING") // PENDING, APPROVED, COMPLETED, CANCELLED
+  totalQuantity   Int
+  totalValue      Decimal  @db.Decimal(14, 2)
+  notes           String?
+  approvedById    String?  @db.Uuid
+  approvedAt      DateTime?
+  returnedById    String?  @db.Uuid
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items           SupplierReturnItem[]
+
+  @@unique([tenantId, returnNo])
+  @@index([tenantId, branchId])
+  @@index([supplierId])
+}
+
+model SupplierReturnItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  returnId        String   @db.Uuid
+  drugId          String   @db.Uuid
+  batchId         String   @db.Uuid
+  quantity        Int
+  unitCost        Decimal  @db.Decimal(14, 2)
+  totalAmount     Decimal  @db.Decimal(14, 2)
+  notes           String?
+  createdById     String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplierReturn  SupplierReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  batch           DrugBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([returnId])
+  @@index([batchId])
 }
