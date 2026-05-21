@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Send, FileText, CheckCircle2, Clock, DollarSign, AlertTriangle,
   Plus, X, ChevronDown, Search, Eye, Trash2, SquareCheckBig,
-  Square, Printer, Building2, ShieldCheck, Landmark, Ban,
-  ArrowRight, CheckCheck, ReceiptText, Info, ChevronRight,
+  Square, Printer, Building2, ShieldCheck, Landmark,
+  ArrowRight, CheckCheck, ReceiptText, ChevronRight,
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useDispatchStore, generateDispatchId } from "../../store/dispatchStore";

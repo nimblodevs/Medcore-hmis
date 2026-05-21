@@ -19,6 +19,13 @@ import {
   CreditCard,
   Send,
   BarChart3,
+  Package,
+  Pill,
+  ShoppingCart,
+  Syringe,
+  UserCog,
+  KeyRound,
+  Network,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -163,6 +170,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
   const [financeMenuOpen, setFinanceMenuOpen] = useState(
     ["op_cons_billing", "debtors", "schemes"].includes(activePage) ? true : true
   );
+  const [pharmacyMenuOpen, setPharmacyMenuOpen] = useState(
+    ["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"].includes(activePage)
+  );
+  const userManagementPages = ["user_management_users", "user_management_roles", "user_management_departments", "user_management_branches"];
+  const [userManagementMenuOpen, setUserManagementMenuOpen] = useState(
+    userManagementPages.includes(activePage)
+  );
 
   return (
     <>
@@ -249,7 +263,7 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["finance_dashboard", "op_cons_billing", "op_service_billing", "cashier_transactions", "debtors", "schemes", "invoices", "credit_payments", "dispatches", "insurance_claim_allocation", "aging_analysis"].includes(activePage)}
+              active={["finance_dashboard", "op_cons_billing", "op_service_billing", "cashier_transactions", "debtors", "schemes", "invoices", "interim_invoices", "credit_payments", "dispatches", "insurance_claim_allocation", "aging_analysis"].includes(activePage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -303,6 +317,13 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 onClick={() => onPageChange?.("invoices")}
               />
               <SidebarItem
+                icon={FileText}
+                label="Interim Invoices"
+                active={activePage === "interim_invoices"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("interim_invoices")}
+              />
+              <SidebarItem
                 icon={CreditCard}
                 label="Credit Payments"
                 active={activePage === "credit_payments"}
@@ -329,6 +350,94 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
                 active={activePage === "aging_analysis"}
                 isSubItem={true}
                 onClick={() => onPageChange?.("aging_analysis")}
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
+              icon={Package}
+              label="Pharmacy"
+              active={["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"].includes(activePage)}
+              isOpen={pharmacyMenuOpen}
+              onToggle={() => setPharmacyMenuOpen(!pharmacyMenuOpen)}
+            >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={activePage === "pharmacy_dashboard"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_dashboard")}
+              />
+              <SidebarItem
+                icon={Pill}
+                label="Drugs"
+                active={activePage === "pharmacy_drugs"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_drugs")}
+              />
+              <SidebarItem
+                icon={Package}
+                label="Stock"
+                active={activePage === "pharmacy_stock"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_stock")}
+              />
+              <SidebarItem
+                icon={Syringe}
+                label="Dispensing"
+                active={activePage === "pharmacy_dispensing"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_dispensing")}
+              />
+              <SidebarItem
+                icon={ShoppingCart}
+                label="Purchases"
+                active={activePage === "pharmacy_purchases"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_purchases")}
+              />
+              <SidebarItem
+                icon={BarChart3}
+                label="Reports"
+                active={activePage === "pharmacy_reports"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("pharmacy_reports")}
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
+              icon={UserCog}
+              label="User Management"
+              active={userManagementPages.includes(activePage)}
+              isOpen={userManagementMenuOpen}
+              onToggle={() => setUserManagementMenuOpen(!userManagementMenuOpen)}
+            >
+              <SidebarItem
+                icon={Users}
+                label="Users"
+                active={activePage === "user_management_users"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("user_management_users")}
+              />
+              <SidebarItem
+                icon={KeyRound}
+                label="Roles"
+                active={activePage === "user_management_roles"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("user_management_roles")}
+              />
+              <SidebarItem
+                icon={Network}
+                label="Departments"
+                active={activePage === "user_management_departments"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("user_management_departments")}
+              />
+              <SidebarItem
+                icon={Building2}
+                label="Branches"
+                active={activePage === "user_management_branches"}
+                isSubItem={true}
+                onClick={() => onPageChange?.("user_management_branches")}
               />
             </SidebarDropdown>
 

@@ -925,7 +925,13 @@ export const createPrescription = async (data, auth, context = {}) => {
   }
 
   // Generate prescription number
-  const prescriptionNumber = await generatePrescriptionNo(context.tenantId, context.branchId);
+  const prescriptionCount = await prisma.prescription.count({
+    where: {
+      tenantId: context.tenantId,
+      branchId: context.branchId
+    }
+  });
+  const prescriptionNumber = generatePrescriptionNo(prescriptionCount);
 
   const prescription = await prisma.prescription.create({
     data: {

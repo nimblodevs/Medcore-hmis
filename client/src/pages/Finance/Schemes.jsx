@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldCheck, Plus, Search, X, Eye, Edit2, ChevronDown, ChevronUp,
   Percent, Hash, Minus, AlertCircle, CheckCircle2, Layers,
-  Info, Trash2, ChevronsUpDown, BookOpen, BarChart2, Ban,
+  Info, Trash2, BookOpen, BarChart2,
 } from "lucide-react";
 import { mockSchemes, mockProviders, SERVICE_POINTS } from "../../constants/mockDebtors";
 

@@ -609,8 +609,6 @@ const PatientRegistration = () => {
       nhifEmployer,
       nhifCoverType,
       nhifExpiryDate,
-      nhifCoverType,
-      nhifExpiryDate,
       corporateName,
       corporateAccountNumber,
       corporateContactPerson,
@@ -665,6 +663,8 @@ const PatientRegistration = () => {
     insuranceCoverEndDate,
     nhifNumber,
     nhifEmployer,
+    nhifCoverType,
+    nhifExpiryDate,
     corporateName,
     corporateAccountNumber,
     corporateContactPerson,
@@ -784,7 +784,6 @@ const PatientRegistration = () => {
   /** Reactive NOK → Emergency sync */
   useEffect(() => {
     if (!sameAsNok) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEmergencyName(
       [nokFirstName, nokOtherName, nokSurname].filter(Boolean).join(" ")
     );

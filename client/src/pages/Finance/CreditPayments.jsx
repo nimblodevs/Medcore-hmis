@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  CreditCard, Building2, ShieldCheck, Landmark, TrendingDown,
-  CheckCircle2, Clock, Search, X, ChevronDown, AlertCircle,
-  ReceiptText, ArrowRight, DollarSign, Hash, FileText,
-  SquareCheckBig, Square, ChevronRight, Banknote, Send,
+  Building2, ShieldCheck, Landmark, TrendingDown,
+  CheckCircle2, Search, X, ChevronDown, AlertCircle,
+  ReceiptText, DollarSign, Hash, FileText,
+  SquareCheckBig, Square, Banknote, Send,
 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
 import { useCreditPaymentStore, generatePaymentId } from "../../store/creditPaymentStore";

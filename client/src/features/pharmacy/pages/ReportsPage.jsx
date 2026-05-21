@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { drugApi, batchApi, stockMovementApi } from '../services/pharmacy.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,39 +44,37 @@ const ReportsPage = () => {
     }).then(res => res.data),
   });
 
+  const drugs = Array.isArray(drugsData?.data) ? drugsData.data : Array.isArray(drugsData) ? drugsData : [];
+  const batches = Array.isArray(batchesData?.data) ? batchesData.data : Array.isArray(batchesData) ? batchesData : [];
+  const movements = Array.isArray(movementsData?.data) ? movementsData.data : Array.isArray(movementsData) ? movementsData : [];
+
   const calculateStockValue = () => {
-    if (!batchesData?.data) return 0;
-    return batchesData.data.reduce((sum, batch) => {
+    return batches.reduce((sum, batch) => {
       return sum + (batch.unitPrice * batch.quantity);
     }, 0);
   };
 
   const calculateExpiringSoon = () => {
-    if (!batchesData?.data) return 0;
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return batchesData.data.filter(batch => {
+    return batches.filter(batch => {
       const expiryDate = new Date(batch.expiryDate);
       return expiryDate <= thirtyDaysFromNow && expiryDate > new Date();
     }).length;
   };
 
   const calculateExpired = () => {
-    if (!batchesData?.data) return 0;
-    return batchesData.data.filter(batch => {
+    return batches.filter(batch => {
       return new Date(batch.expiryDate) < new Date();
     }).length;
   };
 
   const calculateLowStock = () => {
-    if (!drugsData?.data) return 0;
-    return drugsData.data.filter(drug => drug.isLowStock).length;
+    return drugs.filter(drug => drug.isLowStock).length;
   };
 
   const getMovementSummary = () => {
-    if (!movementsData?.data) return { in: 0, out: 0, adjustments: 0 };
-    
-    return movementsData.data.reduce((acc, movement) => {
+    return movements.reduce((acc, movement) => {
       if (['PURCHASE_RECEIPT', 'ADJUSTMENT_IN', 'RETURN_IN'].includes(movement.type)) {
         acc.in += movement.quantity;
       } else if (['DISPENSE', 'SALE', 'ADJUSTMENT_OUT', 'EXPIRY_WRITEOFF', 'RETURN_OUT'].includes(movement.type)) {
@@ -164,7 +162,7 @@ const ReportsPage = () => {
               <Package className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Batches</p>
-                <p className="text-2xl font-bold">{batchesData?.data?.length || 0}</p>
+                <p className="text-2xl font-bold">{batches.length}</p>
               </div>
             </div>
           </CardContent>
@@ -251,7 +249,7 @@ const ReportsPage = () => {
                     <Badge variant="success">Good</Badge>
                   </td>
                   <td className="p-3 font-medium">
-                    {batchesData?.data?.filter(b => {
+                    {batches.filter(b => {
                       const expiryDate = new Date(b.expiryDate);
                       const ninetyDaysFromNow = new Date();
                       ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
@@ -267,7 +265,7 @@ const ReportsPage = () => {
                   </td>
                   <td className="p-3 font-medium">{calculateExpiringSoon()}</td>
                   <td className="p-3 font-medium">
-                    KES {batchesData?.data
+                    KES {batches
                       .filter(b => {
                         const expiryDate = new Date(b.expiryDate);
                         const thirtyDaysFromNow = new Date();
@@ -285,7 +283,7 @@ const ReportsPage = () => {
                   </td>
                   <td className="p-3 font-medium">{calculateExpired()}</td>
                   <td className="p-3 font-medium text-red-600">
-                    KES {batchesData?.data
+                    KES {batches
                       .filter(b => new Date(b.expiryDate) < new Date())
                       .reduce((sum, b) => sum + (b.unitPrice * b.quantity), 0)
                       .toFixed(2) || 0}
@@ -307,7 +305,7 @@ const ReportsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {movementsData?.data?.length === 0 ? (
+          {movements.length === 0 ? (
             <p className="text-muted-foreground">No stock movements in selected period</p>
           ) : (
             <div className="rounded-md border">
@@ -324,7 +322,7 @@ const ReportsPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {movementsData?.data?.slice(0, 10).map((movement) => (
+                  {movements.slice(0, 10).map((movement) => (
                     <tr key={movement.id} className="border-b hover:bg-muted/50">
                       <td className="p-3">
                         {new Date(movement.createdAt).toLocaleDateString()}

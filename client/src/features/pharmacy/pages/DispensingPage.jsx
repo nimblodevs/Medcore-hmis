@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { prescriptionApi, dispenseApi, drugApi } from '../services/pharmacy.api';
+import { prescriptionApi, dispenseApi } from '../services/pharmacy.api';
 import { usePharmacyStore } from '../store/pharmacy.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +25,10 @@ const DispensingPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('PENDING');
   
-  const { openModal, setSelectedPrescription, dispensingCart, clearDispensingCart } = usePharmacyStore();
+  const { openModal, setSelectedPrescription, dispensingCart } = usePharmacyStore();
 
   // Fetch prescriptions
-  const { data: prescriptionsData, isLoading: prescriptionsLoading, refetch } = useQuery({
+  const { data: prescriptionsData, isLoading: prescriptionsLoading } = useQuery({
     queryKey: ['prescriptions', { status: statusFilter }],
     queryFn: () => prescriptionApi.getAll({ status: statusFilter }).then(res => res.data),
   });
@@ -38,6 +38,16 @@ const DispensingPage = () => {
     queryKey: ['dispenses'],
     queryFn: () => dispenseApi.getAll({ limit: 10 }).then(res => res.data),
   });
+  const prescriptions = Array.isArray(prescriptionsData?.data)
+    ? prescriptionsData.data
+    : Array.isArray(prescriptionsData)
+      ? prescriptionsData
+      : [];
+  const dispenses = Array.isArray(dispensesData?.data)
+    ? dispensesData.data
+    : Array.isArray(dispensesData)
+      ? dispensesData
+      : [];
 
   const handleDispense = (prescription) => {
     setSelectedPrescription(prescription);
@@ -120,14 +130,14 @@ const DispensingPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {prescriptionsData?.data?.length === 0 ? (
+                  {prescriptions.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-muted-foreground">
                         No prescriptions found
                       </td>
                     </tr>
                   ) : (
-                    prescriptionsData?.data?.map((prescription) => (
+                    prescriptions.map((prescription) => (
                       <tr key={prescription.id} className="border-b hover:bg-muted/50">
                         <td className="p-3 font-mono text-sm">{prescription.referenceNumber}</td>
                         <td className="p-3 font-medium">
@@ -180,7 +190,7 @@ const DispensingPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {dispensesData?.data?.length === 0 ? (
+          {dispenses.length === 0 ? (
             <p className="text-muted-foreground">No recent dispenses</p>
           ) : (
             <div className="rounded-md border">
@@ -196,7 +206,7 @@ const DispensingPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {dispensesData?.data?.map((dispense) => (
+                  {dispenses.map((dispense) => (
                     <tr key={dispense.id} className="border-b hover:bg-muted/50">
                       <td className="p-3 font-mono text-sm">{dispense.referenceNumber}</td>
                       <td className="p-3">
@@ -234,7 +244,7 @@ const DispensingPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {prescriptionsData?.data?.filter(p => p.status === 'PENDING').length || 0}
+                  {prescriptions.filter(p => p.status === 'PENDING').length}
                 </p>
               </div>
             </div>
@@ -248,7 +258,7 @@ const DispensingPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Partially Dispensed</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {prescriptionsData?.data?.filter(p => p.status === 'PARTIALLY_DISPENSED').length || 0}
+                  {prescriptions.filter(p => p.status === 'PARTIALLY_DISPENSED').length}
                 </p>
               </div>
             </div>
@@ -262,10 +272,10 @@ const DispensingPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Dispensed Today</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {dispensesData?.data?.filter(d => {
+                  {dispenses.filter(d => {
                     const today = new Date().toDateString();
                     return new Date(d.dispenseDate).toDateString() === today;
-                  }).length || 0}
+                  }).length}
                 </p>
               </div>
             </div>

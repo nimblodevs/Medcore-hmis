@@ -19,6 +19,16 @@ const Dispatches = lazy(() => import("./Finance/Dispatches"));
 const InsuranceClaimPayments = lazy(() => import("./Finance/InsuranceClaimPayments"));
 const AgingAnalysis = lazy(() => import("./Finance/AgingAnalysis"));
 const FinanceDashboard = lazy(() => import("./Finance/FinanceDashboard"));
+const PharmacyDashboard = lazy(() => import("../features/pharmacy/pages/PharmacyDashboard"));
+const DrugsPage = lazy(() => import("../features/pharmacy/pages/DrugsPage"));
+const StockPage = lazy(() => import("../features/pharmacy/pages/StockPage"));
+const DispensingPage = lazy(() => import("../features/pharmacy/pages/DispensingPage"));
+const PurchasesPage = lazy(() => import("../features/pharmacy/pages/PurchasesPage"));
+const PharmacyReportsPage = lazy(() => import("../features/pharmacy/pages/ReportsPage"));
+const UsersPage = lazy(() => import("./UserManagement/UsersPage"));
+const RolesPage = lazy(() => import("./UserManagement/RolesPage"));
+const DepartmentsPage = lazy(() => import("./UserManagement/DepartmentsPage"));
+const BranchesPage = lazy(() => import("./UserManagement/BranchesPage"));
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
@@ -44,11 +54,22 @@ const HMS = () => {
     if (path === "/finance/cashier-transactions") return "cashier_transactions";
     if (path === "/finance/debtors") return "debtors";
     if (path === "/finance/schemes") return "schemes";
+    if (path === "/finance/invoices/interim") return "interim_invoices";
     if (path === "/finance/invoices" || path.startsWith("/finance/invoices/")) return "invoices";
     if (path === "/finance/credit-payments") return "credit_payments";
     if (path === "/finance/dispatches") return "dispatches";
     if (path === "/finance/insurance-claim-allocation") return "insurance_claim_allocation";
     if (path === "/finance/aging-analysis") return "aging_analysis";
+    if (path === "/pharmacy/dashboard") return "pharmacy_dashboard";
+    if (path === "/pharmacy/drugs") return "pharmacy_drugs";
+    if (path === "/pharmacy/stock") return "pharmacy_stock";
+    if (path === "/pharmacy/dispensing") return "pharmacy_dispensing";
+    if (path === "/pharmacy/purchases") return "pharmacy_purchases";
+    if (path === "/pharmacy/reports") return "pharmacy_reports";
+    if (path === "/admin/users") return "user_management_users";
+    if (path === "/admin/roles") return "user_management_roles";
+    if (path === "/admin/departments") return "user_management_departments";
+    if (path === "/admin/branches") return "user_management_branches";
     if (path === "/dashboard") return "dashboard";
     return "patients";
   };
@@ -63,10 +84,21 @@ const HMS = () => {
     else if (page === "debtors") navigate("/finance/debtors");
     else if (page === "schemes") navigate("/finance/schemes");
     else if (page === "invoices") navigate("/finance/invoices");
+    else if (page === "interim_invoices") navigate("/finance/invoices/interim");
     else if (page === "credit_payments") navigate("/finance/credit-payments");
     else if (page === "dispatches") navigate("/finance/dispatches");
     else if (page === "insurance_claim_allocation") navigate("/finance/insurance-claim-allocation");
     else if (page === "aging_analysis") navigate("/finance/aging-analysis");
+    else if (page === "pharmacy_dashboard") navigate("/pharmacy/dashboard");
+    else if (page === "pharmacy_drugs") navigate("/pharmacy/drugs");
+    else if (page === "pharmacy_stock") navigate("/pharmacy/stock");
+    else if (page === "pharmacy_dispensing") navigate("/pharmacy/dispensing");
+    else if (page === "pharmacy_purchases") navigate("/pharmacy/purchases");
+    else if (page === "pharmacy_reports") navigate("/pharmacy/reports");
+    else if (page === "user_management_users") navigate("/admin/users");
+    else if (page === "user_management_roles") navigate("/admin/roles");
+    else if (page === "user_management_departments") navigate("/admin/departments");
+    else if (page === "user_management_branches") navigate("/admin/branches");
     else if (page === "dashboard") navigate("/dashboard");
     setIsSidebarOpen(false);
   };
@@ -104,6 +136,16 @@ const HMS = () => {
                 <Route path="/finance/insurance-claim-allocation" element={<InsuranceClaimPayments />} />
                 <Route path="/finance/aging-analysis" element={<AgingAnalysis />} />
                 <Route path="/finance/dashboard" element={<FinanceDashboard />} />
+                <Route path="/pharmacy/dashboard" element={<PharmacyDashboard />} />
+                <Route path="/pharmacy/drugs" element={<DrugsPage />} />
+                <Route path="/pharmacy/stock" element={<StockPage />} />
+                <Route path="/pharmacy/dispensing" element={<DispensingPage />} />
+                <Route path="/pharmacy/purchases" element={<PurchasesPage />} />
+                <Route path="/pharmacy/reports" element={<PharmacyReportsPage />} />
+                <Route path="/admin/users" element={<UsersPage />} />
+                <Route path="/admin/roles" element={<RolesPage />} />
+                <Route path="/admin/departments" element={<DepartmentsPage />} />
+                <Route path="/admin/branches" element={<BranchesPage />} />
                 <Route path="/dashboard" element={
                   <div className="flex h-full items-center justify-center py-20">
                     <div className="text-center">

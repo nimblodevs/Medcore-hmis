@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { drugApi, drugCategoryApi, storeApi } from '../services/pharmacy.api';
+import { drugApi, drugCategoryApi } from '../services/pharmacy.api';
 import { usePharmacyStore } from '../store/pharmacy.store';
 import { motion } from 'motion/react';
 import {
   Search, Plus, Filter, AlertTriangle, Clock, Package,
-  Edit, Trash2, ChevronRight, Pill, Tag, TrendingUp
+  Edit, Trash2, Pill, Tag
 } from 'lucide-react';
 
 /**
@@ -70,8 +70,8 @@ const DrugsPage = () => {
     );
   }
 
-  const drugs = drugsData?.data || [];
-  const categories = categoriesData?.data || [];
+  const drugs = Array.isArray(drugsData?.data) ? drugsData.data : Array.isArray(drugsData) ? drugsData : [];
+  const categories = Array.isArray(categoriesData?.data) ? categoriesData.data : Array.isArray(categoriesData) ? categoriesData : [];
 
   return (
     <motion.div

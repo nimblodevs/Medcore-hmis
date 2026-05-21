@@ -1,11 +1,10 @@
-import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { drugApi, storeApi, batchApi } from '../services/pharmacy.api';
 import { motion } from 'motion/react';
 import { 
-  AlertTriangle, Package, TrendingUp, Clock, 
-  Pill, Building2, ChevronRight, ArrowUpRight,
-  Activity, ThermometerSnowflake, ShoppingCart
+  AlertTriangle, Package, Clock, 
+  Building2, ChevronRight,
+  Activity, ThermometerSnowflake
 } from 'lucide-react';
 
 /**
@@ -39,11 +38,16 @@ const PharmacyDashboard = () => {
     queryFn: () => storeApi.getAll().then(res => res.data),
   });
 
+  const allDrugs = Array.isArray(allDrugsData?.data) ? allDrugsData.data : Array.isArray(allDrugsData) ? allDrugsData : [];
+  const lowStockItems = Array.isArray(lowStockData?.data) ? lowStockData.data : Array.isArray(lowStockData) ? lowStockData : [];
+  const expiringBatches = Array.isArray(expiringData?.data) ? expiringData.data : Array.isArray(expiringData) ? expiringData : [];
+  const stores = Array.isArray(storesData?.data) ? storesData.data : Array.isArray(storesData) ? storesData : [];
+
   // Calculate metrics
-  const totalDrugs = allDrugsData?.meta?.total || 0;
-  const lowStockCount = lowStockData?.data?.length || 0;
-  const expiringCount = expiringData?.data?.length || 0;
-  const totalStores = storesData?.data?.length || 0;
+  const totalDrugs = allDrugsData?.meta?.total || allDrugs.length;
+  const lowStockCount = lowStockItems.length;
+  const expiringCount = expiringBatches.length;
+  const totalStores = stores.length;
 
   // Format helpers
   const fmtDate = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('en-KE', { 
@@ -190,7 +194,7 @@ const PharmacyDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {lowStockData?.data?.slice(0, 5).map((item) => (
+                  {lowStockItems.slice(0, 5).map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-4 py-3">
                         <p className="text-xs font-semibold text-slate-900 leading-tight">
@@ -252,7 +256,7 @@ const PharmacyDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {expiringData?.data?.slice(0, 5).map((batch) => (
+                  {expiringBatches.slice(0, 5).map((batch) => (
                     <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-4 py-3">
                         <p className="text-xs font-semibold text-slate-900 leading-tight">
