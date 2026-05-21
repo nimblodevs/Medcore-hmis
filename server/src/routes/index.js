@@ -11,6 +11,7 @@ import invoiceItemRoutes from "./invoice-item.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import receiptRoutes from "./receipt.routes.js";
 import reportRoutes from "./report.routes.js";
+import pharmacyRoutes from "./pharmacy.routes.js";
 import authenticateUser from "../middlewares/authenticateUser.js";
 import tenantScope from "../middlewares/tenantScope.js";
 import branchScope from "../middlewares/branchScope.js";
@@ -31,5 +32,6 @@ router.use("/invoice-items", invoiceItemRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/receipts", receiptRoutes);
 router.use("/reports", reportRoutes);
+router.use("/pharmacy", pharmacyRoutes);
 
 export default router;
