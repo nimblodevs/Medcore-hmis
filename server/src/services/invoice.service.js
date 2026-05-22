@@ -1,8 +1,8 @@
-import { InvoiceStatus, BillingType, ApprovalAction, ClaimStatus } from "@prisma/client";
+import { InvoiceStatus, BillingType, ApprovalAction, ClaimStatus, AdjustmentType } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
 import { round2, toNumber } from "../utils/money.js";
-import { claimNo, invoiceNo } from "../utils/numbering.js";
+import { generateInvoiceNo, generateClaimNo, generateReversalNo, generateAdjustmentNo } from "../utils/numbering.js";
 
 const ACTIVE_CREDIT_STATUSES = [
   InvoiceStatus.PENDING_APPROVAL,
@@ -141,8 +141,8 @@ export const createInvoice = async (payload, actor, context) =>
     ensureInvoiceAmounts(payload);
     await ensureBillingRules(tx, payload, { tenantId, branchId });
 
-    const count = await tx.invoice.count({ where: { tenantId } });
-    const nextInvoiceNo = invoiceNo(count);
+    // Generate invoice number from backend sequence
+    const nextInvoiceNo = await generateInvoiceNo(tenantId, branchId);
 
     const invoice = await tx.invoice.create({
       data: {
@@ -345,12 +345,14 @@ export const generateClaimForInvoice = async (id, actor, context) =>
     const existingClaim = await tx.claim.findFirst({ where: { invoiceId: id, deletedAt: null } });
     if (existingClaim) return existingClaim;
 
-    const claimCount = await tx.claim.count({ where: { tenantId: invoice.tenantId } });
+    // Generate claim number from backend sequence
+    const nextClaimNo = await generateClaimNo(invoice.tenantId, invoice.branchId);
+    
     const created = await tx.claim.create({
       data: {
         tenantId: invoice.tenantId,
         branchId: invoice.branchId,
-        claimNo: claimNo(claimCount),
+        claimNo: nextClaimNo,
         invoiceId: invoice.id,
         visitId: invoice.visitId,
         creditCustomerId: invoice.creditCustomerId,
@@ -403,34 +405,125 @@ export const cancelInvoice = async (id, comments, actor, context) =>
     return updated;
   });
 
-export const reverseInvoice = async (id, comments, actor, context) =>
+export const reverseInvoice = async (id, reason, actor, context) =>
   prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findFirst({
-      where: { id, deletedAt: null, ...(context.tenantId ? { tenantId: context.tenantId } : {}) }
+      where: { id, deletedAt: null, ...(context.tenantId ? { tenantId: context.tenantId } : {}) },
+      include: { 
+        items: { where: { deletedAt: null } },
+        paymentAllocations: { 
+          where: { deletedAt: null },
+          include: { payment: true }
+        }
+      }
     });
     if (!invoice) throw new ApiError(404, "Invoice not found");
-    if (toNumber(invoice.amountPaid) > 0) throw new ApiError(400, "Cannot reverse invoice with allocations");
-    if ([InvoiceStatus.CANCELLED, InvoiceStatus.REVERSED, InvoiceStatus.FULLY_PAID].includes(invoice.status)) {
+    
+    // Check if already reversed
+    if (invoice.status === InvoiceStatus.REVERSED) {
+      throw new ApiError(400, "Invoice is already reversed");
+    }
+    
+    // Check if invoice can be reversed
+    if ([InvoiceStatus.CANCELLED, InvoiceStatus.VOIDED].includes(invoice.status)) {
       throw new ApiError(400, "Invoice cannot be reversed from current status");
     }
+    
+    if (!reason || reason.trim().length === 0) {
+      throw new ApiError(400, "Reversal reason is mandatory");
+    }
 
+    // Generate reversal number
+    const nextReversalNo = await generateReversalNo(invoice.tenantId, invoice.branchId);
+
+    // Collect payment IDs to reverse
+    const reversedPaymentIds = [];
+    
+    // If invoice has payments, reverse them
+    if (invoice.paymentAllocations && invoice.paymentAllocations.length > 0) {
+      for (const allocation of invoice.paymentAllocations) {
+        const payment = allocation.payment;
+        if (payment && !payment.reversedAt) {
+          // Mark payment as reversed
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: {
+              reversedById: actor.userId,
+              reversedAt: new Date(),
+              updatedById: actor.userId
+            }
+          });
+          reversedPaymentIds.push(payment.id);
+          
+          // Reverse the allocation
+          await tx.paymentAllocation.update({
+            where: { id: allocation.id },
+            data: {
+              deletedAt: new Date(),
+              updatedById: actor.userId
+            }
+          });
+        }
+      }
+    }
+
+    // Calculate reversal amount
+    const reversalAmount = toNumber(invoice.amountPaid) > 0 
+      ? toNumber(invoice.amountPaid) 
+      : toNumber(invoice.outstandingAmount);
+
+    // Create reversal record
+    const reversal = await tx.invoiceReversal.create({
+      data: {
+        tenantId: invoice.tenantId,
+        branchId: invoice.branchId,
+        invoiceId: invoice.id,
+        reason: reason.trim(),
+        reversalAmount: round2(reversalAmount),
+        reversedPaymentIds,
+        approvedById: actor.userId,
+        approvedAt: new Date(),
+        createdById: actor.userId,
+        updatedById: actor.userId
+      }
+    });
+
+    // Update invoice status
     const updated = await tx.invoice.update({
       where: { id },
       data: {
         status: InvoiceStatus.REVERSED,
         reversedAt: new Date(),
+        outstandingAmount: 0,
+        amountPaid: 0,
         updatedById: actor.userId
       }
     });
+
+    // Create approval log
     await createApprovalLog(tx, {
       tenantId: invoice.tenantId,
       branchId: invoice.branchId,
       invoiceId: invoice.id,
       action: ApprovalAction.REVERSED,
-      comments: comments || null,
+      comments: reason,
       actedById: actor.userId
     });
-    return updated;
+
+    // Create status history
+    await tx.invoiceStatusHistory.create({
+      data: {
+        tenantId: invoice.tenantId,
+        branchId: invoice.branchId,
+        invoiceId: invoice.id,
+        previousStatus: invoice.status,
+        newStatus: InvoiceStatus.REVERSED,
+        reason: reason,
+        changedById: actor.userId
+      }
+    });
+
+    return { invoice: updated, reversal };
   });
 
 export const addInvoiceItem = async (invoiceId, payload, actor, context) =>

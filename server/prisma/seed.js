@@ -617,6 +617,519 @@ async function seedPharmacyData({ tenant, branch, adminUser }) {
   console.log("Pharmacy seed data completed.");
 }
 
+async function seedInvoiceData({ tenant, branch, adminUser, patient, visit }) {
+  const now = new Date();
+  
+  // Create credit customers for credit billing
+  const insuranceCompany = await prisma.creditCustomer.upsert({
+    where: { tenantId_customerCode: { tenantId: tenant.id, customerCode: "INS-NHIF-001" } },
+    update: {
+      name: "National Hospital Insurance Fund",
+      customerType: "INSURANCE_COMPANY",
+      creditLimit: "5000000.00",
+      isActive: true,
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      name: "National Hospital Insurance Fund",
+      customerCode: "INS-NHIF-001",
+      customerType: "INSURANCE_COMPANY",
+      creditLimit: "5000000.00",
+      createdById: adminUser.id
+    }
+  });
+
+  const corporateClient = await prisma.creditCustomer.upsert({
+    where: { tenantId_customerCode: { tenantId: tenant.id, customerCode: "CORP-ABC-001" } },
+    update: {
+      name: "ABC Manufacturing Ltd",
+      customerType: "CORPORATE_CLIENT",
+      creditLimit: "2000000.00",
+      isActive: true,
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      name: "ABC Manufacturing Ltd",
+      customerCode: "CORP-ABC-001",
+      customerType: "CORPORATE_CLIENT",
+      creditLimit: "2000000.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // Create insurance scheme
+  const insuranceScheme = await prisma.insuranceScheme.upsert({
+    where: { tenantId_schemeCode: { tenantId: tenant.id, schemeCode: "NHIF-SUPER" } },
+    update: {
+      name: "NHIF Super Cover",
+      requiresAuthorization: true,
+      isActive: true,
+      updatedById: adminUser.id
+    },
+    create: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      name: "NHIF Super Cover",
+      schemeCode: "NHIF-SUPER",
+      requiresAuthorization: true,
+      createdById: adminUser.id
+    }
+  });
+
+  // ========== CASH INVOICE - OUTPATIENT ==========
+  const cashInvoice = await prisma.invoice.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceNo: `INV-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0001`,
+      invoiceDate: now,
+      invoiceType: "OUTPATIENT",
+      patientId: patient.id,
+      visitId: visit.id,
+      billingType: "CASH",
+      payerType: "SELF",
+      grossAmount: "3500.00",
+      discountAmount: "0.00",
+      netAmount: "3500.00",
+      patientCopayAmount: "3500.00",
+      payerShareAmount: "0.00",
+      creditAmount: "0.00",
+      amountPaid: "3500.00",
+      outstandingAmount: "0.00",
+      status: "PAID",
+      issuedAt: now,
+      createdById: adminUser.id,
+      items: {
+        create: [
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "CONSULTATION",
+            servicePoint: "OPD",
+            itemCode: "CONS-001",
+            description: "General Consultation",
+            quantity: "1",
+            unitPrice: "1500.00",
+            grossAmount: "1500.00",
+            discountAmount: "0.00",
+            netAmount: "1500.00",
+            createdById: adminUser.id
+          },
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "LABORATORY",
+            servicePoint: "LAB",
+            itemCode: "LAB-CBC",
+            description: "Complete Blood Count",
+            quantity: "1",
+            unitPrice: "2000.00",
+            grossAmount: "2000.00",
+            discountAmount: "0.00",
+            netAmount: "2000.00",
+            createdById: adminUser.id
+          }
+        ]
+      }
+    }
+  });
+
+  // Create payment for cash invoice
+  const cashPayment = await prisma.payment.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      patientId: patient.id,
+      paymentDate: now,
+      paymentMethod: "MPESA",
+      referenceNo: "MPESA-REF-001",
+      mpesaCode: "QKH123456",
+      amountReceived: "3500.00",
+      unappliedAmount: "0.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // Allocate payment to invoice
+  const cashAllocation = await prisma.paymentAllocation.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      paymentId: cashPayment.id,
+      invoiceId: cashInvoice.id,
+      allocatedAmount: "3500.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // Create receipt for cash payment
+  await prisma.receipt.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      receiptNo: `RCP-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0001`,
+      receiptDate: now,
+      invoiceId: cashInvoice.id,
+      paymentId: cashPayment.id,
+      paymentAllocationId: cashAllocation.id,
+      patientId: patient.id,
+      amount: "3500.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // ========== CREDIT INVOICE - INSURANCE ==========
+  const creditInvoice = await prisma.invoice.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceNo: `INV-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0002`,
+      invoiceDate: now,
+      invoiceType: "OUTPATIENT",
+      patientId: patient.id,
+      visitId: visit.id,
+      creditCustomerId: insuranceCompany.id,
+      schemeId: insuranceScheme.id,
+      billingType: "CREDIT",
+      payerType: "INSURANCE_COMPANY",
+      authorizationNo: "AUTH-2024-001",
+      memberNumber: "NHIF-12345678",
+      policyNumber: "POL-SUPER-001",
+      grossAmount: "15000.00",
+      discountAmount: "0.00",
+      netAmount: "15000.00",
+      patientCopayAmount: "3000.00",
+      payerShareAmount: "12000.00",
+      creditAmount: "12000.00",
+      amountPaid: "3000.00",
+      outstandingAmount: "12000.00",
+      status: "PARTIALLY_PAID",
+      issuedAt: now,
+      approvedById: adminUser.id,
+      approvedAt: now,
+      createdById: adminUser.id,
+      items: {
+        create: [
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "CONSULTATION",
+            servicePoint: "OPD",
+            itemCode: "CONS-SPEC",
+            description: "Specialist Consultation",
+            quantity: "1",
+            unitPrice: "3000.00",
+            grossAmount: "3000.00",
+            discountAmount: "0.00",
+            netAmount: "3000.00",
+            createdById: adminUser.id
+          },
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "RADIOLOGY",
+            servicePoint: "XRAY",
+            itemCode: "XRAY-CHEST",
+            description: "Chest X-Ray",
+            quantity: "1",
+            unitPrice: "5000.00",
+            grossAmount: "5000.00",
+            discountAmount: "0.00",
+            netAmount: "5000.00",
+            createdById: adminUser.id
+          },
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "LABORATORY",
+            servicePoint: "LAB",
+            itemCode: "LAB-LIPID",
+            description: "Lipid Profile",
+            quantity: "1",
+            unitPrice: "7000.00",
+            grossAmount: "7000.00",
+            discountAmount: "0.00",
+            netAmount: "7000.00",
+            createdById: adminUser.id
+          }
+        ]
+      }
+    }
+  });
+
+  // Create patient copay payment
+  const copayPayment = await prisma.payment.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      patientId: patient.id,
+      paymentDate: now,
+      paymentMethod: "CARD",
+      referenceNo: "CARD-REF-001",
+      amountReceived: "3000.00",
+      unappliedAmount: "0.00",
+      createdById: adminUser.id
+    }
+  });
+
+  const copayAllocation = await prisma.paymentAllocation.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      paymentId: copayPayment.id,
+      invoiceId: creditInvoice.id,
+      allocatedAmount: "3000.00",
+      createdById: adminUser.id
+    }
+  });
+
+  await prisma.receipt.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      receiptNo: `RCP-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0002`,
+      receiptDate: now,
+      invoiceId: creditInvoice.id,
+      paymentId: copayPayment.id,
+      paymentAllocationId: copayAllocation.id,
+      patientId: patient.id,
+      amount: "3000.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // Create claim for insurance invoice
+  await prisma.claim.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      claimNo: `CLM-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0001`,
+      invoiceId: creditInvoice.id,
+      visitId: visit.id,
+      creditCustomerId: insuranceCompany.id,
+      schemeId: insuranceScheme.id,
+      patientId: patient.id,
+      claimDate: now,
+      claimAmount: "12000.00",
+      status: "SUBMITTED",
+      submittedAt: now,
+      createdById: adminUser.id
+    }
+  });
+
+  // ========== INVOICE FOR REVERSAL DEMO ==========
+  const reversalInvoice = await prisma.invoice.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceNo: `INV-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0003`,
+      invoiceDate: now,
+      invoiceType: "PHARMACY",
+      patientId: patient.id,
+      visitId: visit.id,
+      billingType: "CASH",
+      payerType: "SELF",
+      grossAmount: "2500.00",
+      discountAmount: "0.00",
+      netAmount: "2500.00",
+      patientCopayAmount: "2500.00",
+      payerShareAmount: "0.00",
+      creditAmount: "0.00",
+      amountPaid: "2500.00",
+      outstandingAmount: "0.00",
+      status: "PAID",
+      issuedAt: now,
+      createdById: adminUser.id,
+      items: {
+        create: [
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "PHARMACY",
+            servicePoint: "PHARMACY",
+            itemCode: "DRG-001",
+            description: "Paracetamol 500mg x 10 tabs",
+            quantity: "2",
+            unitPrice: "500.00",
+            grossAmount: "1000.00",
+            discountAmount: "0.00",
+            netAmount: "1000.00",
+            createdById: adminUser.id
+          },
+          {
+            tenantId: tenant.id,
+            branchId: branch.id,
+            serviceType: "PHARMACY",
+            servicePoint: "PHARMACY",
+            itemCode: "DRG-002",
+            description: "Amoxicillin 500mg x 20 caps",
+            quantity: "1",
+            unitPrice: "1500.00",
+            grossAmount: "1500.00",
+            discountAmount: "0.00",
+            netAmount: "1500.00",
+            createdById: adminUser.id
+          }
+        ]
+      }
+    }
+  });
+
+  const reversalPayment = await prisma.payment.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      patientId: patient.id,
+      paymentDate: now,
+      paymentMethod: "CASH",
+      referenceNo: "CASH-REF-001",
+      amountReceived: "2500.00",
+      unappliedAmount: "0.00",
+      createdById: adminUser.id
+    }
+  });
+
+  const reversalAllocation = await prisma.paymentAllocation.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      paymentId: reversalPayment.id,
+      invoiceId: reversalInvoice.id,
+      allocatedAmount: "2500.00",
+      createdById: adminUser.id
+    }
+  });
+
+  const reversalReceipt = await prisma.receipt.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      receiptNo: `RCP-${branch.code}-${now.toISOString().slice(0,10).replace(/-/g,"")}-0003`,
+      receiptDate: now,
+      invoiceId: reversalInvoice.id,
+      paymentId: reversalPayment.id,
+      paymentAllocationId: reversalAllocation.id,
+      patientId: patient.id,
+      amount: "2500.00",
+      createdById: adminUser.id
+    }
+  });
+
+  // Create reversal for the invoice
+  await prisma.invoiceReversal.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: reversalInvoice.id,
+      reason: "Patient returned medication - wrong prescription dispensed",
+      reversalAmount: "2500.00",
+      reversedPaymentIds: [reversalPayment.id],
+      approvedById: adminUser.id,
+      approvedAt: now,
+      createdById: adminUser.id
+    }
+  });
+
+  // Update reversal invoice status
+  await prisma.invoice.update({
+    where: { id: reversalInvoice.id },
+    data: {
+      status: "REVERSED",
+      reversedAt: now,
+      outstandingAmount: "0.00",
+      amountPaid: "0.00",
+      updatedById: adminUser.id
+    }
+  });
+
+  // Reverse the payment
+  await prisma.payment.update({
+    where: { id: reversalPayment.id },
+    data: {
+      reversedById: adminUser.id,
+      reversedAt: now,
+      updatedById: adminUser.id
+    }
+  });
+
+  // Mark allocation as deleted
+  await prisma.paymentAllocation.update({
+    where: { id: reversalAllocation.id },
+    data: {
+      deletedAt: now,
+      updatedById: adminUser.id
+    }
+  });
+
+  // Create status history entries
+  await prisma.invoiceStatusHistory.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: reversalInvoice.id,
+      previousStatus: "DRAFT",
+      newStatus: "ISSUED",
+      reason: "Invoice issued to patient",
+      changedById: adminUser.id
+    }
+  });
+
+  await prisma.invoiceStatusHistory.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: reversalInvoice.id,
+      previousStatus: "ISSUED",
+      newStatus: "PAID",
+      reason: "Full payment received",
+      changedById: adminUser.id
+    }
+  });
+
+  await prisma.invoiceStatusHistory.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: reversalInvoice.id,
+      previousStatus: "PAID",
+      newStatus: "REVERSED",
+      reason: "Patient returned medication - wrong prescription dispensed",
+      changedById: adminUser.id
+    }
+  });
+
+  // Create approval logs
+  await prisma.invoiceApproval.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: creditInvoice.id,
+      action: "SUBMITTED",
+      comments: "Credit invoice submitted for approval",
+      actedById: adminUser.id,
+      createdById: adminUser.id
+    }
+  });
+
+  await prisma.invoiceApproval.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      invoiceId: creditInvoice.id,
+      action: "APPROVED",
+      comments: "Approved - valid NHIF coverage",
+      actedById: adminUser.id,
+      createdById: adminUser.id
+    }
+  });
+
+  console.log("Invoice management seed data completed.");
+}
+
 async function main() {
   console.log("Connecting to database...");
   await prisma.$connect();
@@ -627,6 +1140,19 @@ async function main() {
   const adminUser = await seedSuperAdmin();
   const facility = await seedFacility(adminUser);
   await seedPharmacyData({ ...facility, adminUser });
+  
+  // Get patient and visit from pharmacy seed for invoice seeding
+  const patient = await prisma.patient.findFirst({
+    where: { tenantId: facility.tenant.id, uhid: "UHID-SEED-001" }
+  });
+  const visit = await prisma.visit.findFirst({
+    where: { tenantId: facility.tenant.id, visitNo: "VISIT-SEED-001" }
+  });
+  
+  if (patient && visit) {
+    await seedInvoiceData({ ...facility, adminUser, patient, visit });
+  }
+  
   console.log("Seed completed successfully.");
 }
 

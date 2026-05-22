@@ -1,6 +1,6 @@
 import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
-import { receiptNo } from "../utils/numbering.js";
+import { generateReceiptNo } from "../utils/numbering.js";
 import { round2, toNumber } from "../utils/money.js";
 
 export const createReceipt = async (payload, actor, context) =>
@@ -21,17 +21,17 @@ export const createReceipt = async (payload, actor, context) =>
       }
     }
 
-    const count = await tx.receipt.count({
-      where: { tenantId: context.tenantId || payment.tenantId }
-    });
-    const receiptCode = receiptNo(count);
+    // Generate receipt number from backend sequence
+    const tenantId = context.tenantId || payment.tenantId;
+    const branchId = context.branchId || payment.branchId;
+    const receiptCode = await generateReceiptNo(tenantId, branchId);
 
     const amount = allocation ? toNumber(allocation.allocatedAmount) : payload.amount;
 
     return tx.receipt.create({
       data: {
-        tenantId: context.tenantId || payment.tenantId,
-        branchId: context.branchId || payment.branchId,
+        tenantId,
+        branchId,
         receiptNo: receiptCode,
         receiptDate: payload.receiptDate,
         invoiceId: payload.invoiceId || allocation?.invoiceId || null,

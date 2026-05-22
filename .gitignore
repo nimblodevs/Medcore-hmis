@@ -7,31 +7,38 @@ node_modules/
 .env.local
 .env.*
 
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Logs
-*.log
+# OS files
+.DS_Store
+Thumbs.db
 
-# Build artifacts
+# Build outputs
 dist/
 build/
 target/
 
-# Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-*.so
-.Python
+
+# Temporary files
+*.tmp
+
+# Local configuration
+.env.local
 ```
