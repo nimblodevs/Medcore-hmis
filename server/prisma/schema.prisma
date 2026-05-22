@@ -11,19 +11,31 @@ datasource db {
 enum BillingType {
   CASH
   CREDIT
-  INSURANCE
+}
+
+enum InvoiceType {
+  OUTPATIENT
+  INPATIENT
+  PHARMACY
+  LABORATORY
+  RADIOLOGY
+  PROCEDURE
+  CONSULTATION
+  MANUAL_CHARGE
 }
 
 enum InvoiceStatus {
   DRAFT
   PENDING_APPROVAL
   APPROVED
-  SUBMITTED_TO_PAYER
+  ISSUED
   PARTIALLY_PAID
-  FULLY_PAID
-  REJECTED
-  CANCELLED
+  PAID
+  OVERPAID
+  VOIDED
   REVERSED
+  CANCELLED
+  WRITTEN_OFF
 }
 
 enum VisitType {
@@ -33,10 +45,13 @@ enum VisitType {
 
 enum PaymentMethod {
   CASH
-  BANK_TRANSFER
-  CHEQUE
-  MOBILE_MONEY
+  MPESA
   CARD
+  BANK_TRANSFER
+  MOBILE_MONEY
+  CHEQUE
+  INSURANCE
+  CORPORATE_CREDIT
 }
 
 enum ClaimStatus {
@@ -55,6 +70,39 @@ enum ApprovalAction {
   REVERSED
   SUBMITTED_TO_PAYER
   CLAIM_GENERATED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  STAFF_DISCOUNT
+  APPROVED_DISCOUNT
+  PROMOTIONAL
+}
+
+enum AdjustmentType {
+  PRICE_CORRECTION
+  QUANTITY_CORRECTION
+  DISCOUNT_CORRECTION
+  SERVICE_REMOVAL
+  WRITE_OFF
+}
+
+enum PayerType {
+  INSURANCE_COMPANY
+  CORPORATE_CLIENT
+  EMPLOYER
+  NGO
+  GOVERNMENT_PROGRAM
+  STAFF_CREDIT
+  SELF
+}
+
+enum StatementType {
+  PATIENT
+  INSURANCE_PROVIDER
+  CORPORATE_CLIENT
+  CREDIT_ACCOUNT
 }
 
 model Tenant {
@@ -98,6 +146,11 @@ model Tenant {
   invoices           Invoice[]
   invoiceItems       InvoiceItem[]
   invoiceApprovals   InvoiceApproval[]
+  invoiceAdjustments InvoiceAdjustment[]
+  invoiceDiscounts   InvoiceDiscount[]
+  invoiceReversals   InvoiceReversal[]
+  invoiceStatusHistory InvoiceStatusHistory[]
+  statements         Statement[]
   payments           Payment[]
   paymentAllocations PaymentAllocation[]
   receipts           Receipt[]
@@ -161,6 +214,11 @@ model Branch {
   invoices           Invoice[]
   invoiceItems       InvoiceItem[]
   invoiceApprovals   InvoiceApproval[]
+  invoiceAdjustments InvoiceAdjustment[]
+  invoiceDiscounts   InvoiceDiscount[]
+  invoiceReversals   InvoiceReversal[]
+  invoiceStatusHistory InvoiceStatusHistory[]
+  statements         Statement[]
   payments           Payment[]
   paymentAllocations PaymentAllocation[]
   receipts           Receipt[]
@@ -456,28 +514,37 @@ model Invoice {
   branchId          String        @db.Uuid
   invoiceNo         String
   invoiceDate       DateTime
+  invoiceType       InvoiceType   @default(OUTPATIENT)
   patientId         String        @db.Uuid
   visitId           String        @db.Uuid
   creditCustomerId  String?       @db.Uuid
   schemeId          String?       @db.Uuid
   billingType       BillingType
+  payerType         PayerType?
   authorizationNo   String?
+  claimNumber       String?
+  memberNumber      String?
+  policyNumber      String?
   grossAmount       Decimal       @db.Decimal(14, 2)
   discountAmount    Decimal       @default(0) @db.Decimal(14, 2)
   netAmount         Decimal       @db.Decimal(14, 2)
   patientCopayAmount Decimal      @default(0) @db.Decimal(14, 2)
+  payerShareAmount  Decimal       @default(0) @db.Decimal(14, 2)
   creditAmount      Decimal       @db.Decimal(14, 2)
   amountPaid        Decimal       @default(0) @db.Decimal(14, 2)
   outstandingAmount Decimal       @db.Decimal(14, 2)
+  overpaymentAmount Decimal       @default(0) @db.Decimal(14, 2)
   status            InvoiceStatus @default(DRAFT)
   notes             String?
   createdById       String?       @db.Uuid
   updatedById       String?       @db.Uuid
   approvedById      String?       @db.Uuid
   approvedAt        DateTime?
+  issuedAt          DateTime?
   submittedAt       DateTime?
   cancelledAt       DateTime?
   reversedAt        DateTime?
+  writtenOffAt      DateTime?
   deletedAt         DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -488,7 +555,11 @@ model Invoice {
   creditCustomer    CreditCustomer? @relation(fields: [creditCustomerId], references: [id], onDelete: SetNull)
   scheme            InsuranceScheme? @relation(fields: [schemeId], references: [id], onDelete: SetNull)
   items             InvoiceItem[]
+  adjustments       InvoiceAdjustment[]
+  discounts         InvoiceDiscount[]
   approvals         InvoiceApproval[]
+  reversals         InvoiceReversal[]
+  statusHistory     InvoiceStatusHistory[]
   paymentAllocations PaymentAllocation[]
   receipts          Receipt[]
   claim             Claim?
@@ -496,6 +567,9 @@ model Invoice {
   @@unique([tenantId, invoiceNo])
   @@unique([tenantId, visitId, billingType])
   @@index([tenantId, branchId, status])
+  @@index([tenantId, branchId, billingType])
+  @@index([creditCustomerId, status])
+  @@index([status, invoiceDate])
 }
 
 model InvoiceItem {
@@ -503,13 +577,17 @@ model InvoiceItem {
   tenantId       String   @db.Uuid
   branchId       String   @db.Uuid
   invoiceId      String   @db.Uuid
+  serviceType    String
   servicePoint   String
+  serviceId      String?
   itemCode       String?
   description    String
   quantity       Decimal  @default(1) @db.Decimal(10, 2)
   unitPrice      Decimal  @db.Decimal(14, 2)
+  grossAmount    Decimal  @db.Decimal(14, 2)
   discountAmount Decimal  @default(0) @db.Decimal(14, 2)
   netAmount      Decimal  @db.Decimal(14, 2)
+  departmentId   String?  @db.Uuid
   createdById    String?  @db.Uuid
   updatedById    String?  @db.Uuid
   deletedAt      DateTime?
@@ -520,6 +598,7 @@ model InvoiceItem {
   invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, branchId, invoiceId])
+  @@index([serviceType])
 }
 
 model InvoiceApproval {
@@ -540,6 +619,132 @@ model InvoiceApproval {
   invoice     Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, invoiceId, action])
+  @@index([actedById, createdAt])
+}
+
+model InvoiceAdjustment {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  branchId        String          @db.Uuid
+  invoiceId       String          @db.Uuid
+  adjustmentType  AdjustmentType
+  reason          String
+  previousValue   Decimal         @db.Decimal(14, 2)
+  newValue        Decimal         @db.Decimal(14, 2)
+  difference      Decimal         @db.Decimal(14, 2)
+  affectedField   String
+  approvedById    String?         @db.Uuid
+  approvedAt      DateTime?
+  createdById     String?         @db.Uuid
+  updatedById     String?         @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, invoiceId])
+  @@index([adjustmentType, createdAt])
+}
+
+model InvoiceDiscount {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  branchId        String          @db.Uuid
+  invoiceId       String          @db.Uuid
+  discountType    DiscountType
+  reason          String
+  percentage      Decimal?        @db.Decimal(5, 2)
+  fixedAmount     Decimal?        @db.Decimal(14, 2)
+  discountAmount  Decimal         @db.Decimal(14, 2)
+  approvedById    String?         @db.Uuid
+  approvedAt      DateTime?
+  createdById     String?         @db.Uuid
+  updatedById     String?         @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, invoiceId])
+  @@index([discountType, createdAt])
+}
+
+model InvoiceReversal {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  branchId        String          @db.Uuid
+  invoiceId       String          @db.Uuid
+  reason          String
+  reversalAmount  Decimal         @db.Decimal(14, 2)
+  reversedPaymentIds String[]
+  approvedById    String?         @db.Uuid
+  approvedAt      DateTime?
+  createdById     String?         @db.Uuid
+  updatedById     String?         @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, invoiceId])
+  @@index([createdAt])
+}
+
+model InvoiceStatusHistory {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  branchId        String          @db.Uuid
+  invoiceId       String          @db.Uuid
+  previousStatus  InvoiceStatus
+  newStatus       InvoiceStatus
+  reason          String?
+  changedById     String?         @db.Uuid
+  createdAt       DateTime        @default(now())
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, invoiceId])
+  @@index([invoiceId, createdAt])
+}
+
+model Statement {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  branchId        String          @db.Uuid
+  statementNo     String
+  statementType   StatementType
+  entityId        String
+  entityName      String
+  startDate       DateTime
+  endDate         DateTime
+  openingBalance  Decimal         @db.Decimal(14, 2)
+  closingBalance  Decimal         @db.Decimal(14, 2)
+  totalInvoices   Decimal         @db.Decimal(14, 2)
+  totalPayments   Decimal         @db.Decimal(14, 2)
+  totalAdjustments Decimal        @db.Decimal(14, 2)
+  agingCurrent    Decimal         @default(0) @db.Decimal(14, 2)
+  aging30Days     Decimal         @default(0) @db.Decimal(14, 2)
+  aging60Days     Decimal         @default(0) @db.Decimal(14, 2)
+  aging90Days     Decimal         @default(0) @db.Decimal(14, 2)
+  agingOver90     Decimal         @default(0) @db.Decimal(14, 2)
+  generatedById   String?         @db.Uuid
+  generatedAt     DateTime        @default(now())
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, statementNo])
+  @@index([tenantId, branchId, statementType, entityId])
+  @@index([generatedAt])
 }
 
 model Payment {
@@ -547,12 +752,19 @@ model Payment {
   tenantId           String              @db.Uuid
   branchId           String              @db.Uuid
   patientId          String?             @db.Uuid
+  cashierShiftId     String?             @db.Uuid
   paymentDate        DateTime
   paymentMethod      PaymentMethod
   referenceNo        String?
+  mpesaCode          String?
+  chequeNo           String?
+  bankName           String?
   amountReceived     Decimal             @db.Decimal(14, 2)
   unappliedAmount    Decimal             @db.Decimal(14, 2)
+  changeDue          Decimal             @default(0) @db.Decimal(14, 2)
   notes              String?
+  reversedById       String?             @db.Uuid
+  reversedAt         DateTime?
   createdById        String?             @db.Uuid
   updatedById        String?             @db.Uuid
   deletedAt          DateTime?
@@ -565,6 +777,8 @@ model Payment {
   receipts           Receipt[]
 
   @@index([tenantId, branchId, paymentDate])
+  @@index([cashierShiftId, paymentDate])
+  @@index([paymentMethod, paymentDate])
 }
 
 model PaymentAllocation {
@@ -601,6 +815,12 @@ model Receipt {
   paymentAllocationId String?            @db.Uuid @unique
   patientId           String?            @db.Uuid
   amount              Decimal            @db.Decimal(14, 2)
+  cashierShiftId      String?            @db.Uuid
+  reprintCount        Int                @default(0)
+  lastReprintedAt     DateTime?
+  voidedById          String?            @db.Uuid
+  voidedAt            DateTime?
+  voidReason          String?
   createdById         String?            @db.Uuid
   updatedById         String?            @db.Uuid
   deletedAt           DateTime?
@@ -615,6 +835,7 @@ model Receipt {
 
   @@unique([tenantId, receiptNo])
   @@index([tenantId, branchId, receiptDate])
+  @@index([cashierShiftId, receiptDate])
 }
 
 model Claim {
