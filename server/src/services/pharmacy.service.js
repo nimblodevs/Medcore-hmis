@@ -1,7 +1,11 @@
 import { 
   StockMovementType, 
   PurchaseOrderStatus, 
-  BillingType 
+  BillingType,
+  PharmacySaleStatus,
+  PharmacyPaymentStatus,
+  PharmacyReturnStatus,
+  PayerType
 } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
@@ -2021,3 +2025,5 @@ const generateGRNNo = async (tenantId, branchId) => {
 
   return `${prefix}/${dateStr}/${String(count + 1).padStart(4, '0')}`;
 };
+// ==================== PHARMACY SALE SERVICES ====================
+
