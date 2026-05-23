@@ -65,3 +65,24 @@ router.post("/purchase-orders/:id/cancel", requireRole(["PHARMACY_MANAGER", "SUP
 router.post("/grn", requireRole(["PHARMACY_MANAGER", "PHARMACIST"]), pharmacyController.createGoodsReceivedNote);
 
 export default router;
+
+// ==================== PHARMACY SALE ROUTES ====================
+router.get("/sales", pharmacyController.listPharmacySales);
+router.get("/sales/:id", pharmacyController.getPharmacySale);
+router.post("/sales", requireRole(["PHARMACIST", "PHARMACY_CASHIER"]), pharmacyController.createPharmacySale);
+router.post("/sales/:id/confirm-cash-payment", requireRole(["PHARMACY_CASHIER", "PHARMACIST", "PHARMACY_MANAGER"]), pharmacyController.confirmCashPayment);
+router.post("/sales/:id/approve-credit", requireRole(["PHARMACY_MANAGER", "FINANCE_MANAGER", "CREDIT_OFFICER", "SENIOR_CREDIT_OFFICER"]), pharmacyController.approveCreditSale);
+router.post("/sales/:id/dispense", requireRole(["PHARMACIST"]), pharmacyController.dispensePharmacySale);
+router.post("/sales/:id/cancel", requireRole(["PHARMACY_MANAGER", "SUPER_ADMIN"]), pharmacyController.cancelPharmacySale);
+
+// ==================== PHARMACY RETURN ROUTES ====================
+router.get("/returns", pharmacyController.listPharmacyReturns);
+router.get("/returns/:id", pharmacyController.getPharmacyReturn);
+router.post("/returns", requireRole(["PHARMACIST", "PHARMACY_MANAGER"]), pharmacyController.createPharmacyReturn);
+router.post("/returns/:id/approve", requireRole(["PHARMACY_MANAGER"]), pharmacyController.approvePharmacyReturn);
+router.post("/returns/:id/reject", requireRole(["PHARMACY_MANAGER"]), pharmacyController.rejectPharmacyReturn);
+router.post("/returns/:id/complete", requireRole(["PHARMACIST", "PHARMACY_MANAGER"]), pharmacyController.completePharmacyReturn);
+
+// ==================== REPORT EXPORT ROUTES ====================
+router.get("/sales/:id/receipt", requireRole(["PHARMACIST", "PHARMACY_CASHIER", "FINANCE_MANAGER"]), pharmacyController.downloadSaleReceipt);
+router.get("/reports/sales-export", requireRole(["PHARMACY_MANAGER", "FINANCE_MANAGER", "AUDITOR"]), pharmacyController.downloadSalesReport);

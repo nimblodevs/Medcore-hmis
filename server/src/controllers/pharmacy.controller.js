@@ -255,3 +255,121 @@ export const createGoodsReceivedNote = asyncHandler(async (req, res) => {
   req.audit = { action: AUDIT_ACTIONS.GRN_CREATED, entity: "GRN", entityId: data.id };
   ok(res, data, "Goods received note created", 201);
 });
+
+// ==================== PHARMACY SALE CONTROLLERS ====================
+
+export const listPharmacySales = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.listPharmacySales(req.query, req.context || {});
+  ok(res, data, "Pharmacy sales fetched");
+});
+
+export const getPharmacySale = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.getPharmacySale(req.params.id, req.context || {});
+  ok(res, data, "Pharmacy sale fetched");
+});
+
+export const createPharmacySale = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.createPharmacySale(req.body, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_SALE_CREATED, entity: "PHARMACY_SALE", entityId: data.id };
+  ok(res, data, "Pharmacy sale created", 201);
+});
+
+export const confirmCashPayment = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.confirmCashPayment(req.params.id, req.body, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_SALE_PAID, entity: "PHARMACY_SALE", entityId: req.params.id };
+  ok(res, data, "Cash payment confirmed");
+});
+
+export const approveCreditSale = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.approveCreditSale(req.params.id, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_SALE_CREDIT_BILLED, entity: "PHARMACY_SALE", entityId: req.params.id };
+  ok(res, data, "Credit sale approved");
+});
+
+export const dispensePharmacySale = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.dispensePharmacySale(req.params.id, req.body.items, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_SALE_DISPENSED, entity: "PHARMACY_SALE", entityId: req.params.id };
+  ok(res, data, "Sale dispensed");
+});
+
+export const cancelPharmacySale = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.cancelPharmacySale(req.params.id, req.body.reason, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_SALE_CANCELLED, entity: "PHARMACY_SALE", entityId: req.params.id };
+  ok(res, data, "Sale cancelled");
+});
+
+// ==================== PHARMACY RETURN CONTROLLERS ====================
+
+export const listPharmacyReturns = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.listPharmacyReturns(req.query, req.context || {});
+  ok(res, data, "Pharmacy returns fetched");
+});
+
+export const getPharmacyReturn = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.getPharmacyReturn(req.params.id, req.context || {});
+  ok(res, data, "Pharmacy return fetched");
+});
+
+export const createPharmacyReturn = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.createPharmacyReturn(req.body, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_RETURN_CREATED, entity: "PHARMACY_RETURN", entityId: data.id };
+  ok(res, data, "Pharmacy return created", 201);
+});
+
+export const approvePharmacyReturn = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.approvePharmacyReturn(req.params.id, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_RETURN_APPROVED, entity: "PHARMACY_RETURN", entityId: req.params.id };
+  ok(res, data, "Pharmacy return approved");
+});
+
+export const rejectPharmacyReturn = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.rejectPharmacyReturn(req.params.id, req.body.reason, req.auth, req.context || {});
+  ok(res, data, "Pharmacy return rejected");
+});
+
+export const completePharmacyReturn = asyncHandler(async (req, res) => {
+  const data = await pharmacyService.completePharmacyReturn(req.params.id, req.auth, req.context || {});
+  req.audit = { action: AUDIT_ACTIONS.PHARMACY_RETURN_COMPLETED, entity: "PHARMACY_RETURN", entityId: req.params.id };
+  ok(res, data, "Pharmacy return completed");
+});
+
+// ==================== PHARMACY REPORT EXPORT CONTROLLERS ====================
+
+import { generatePharmacyReceiptPDF, generateSalesReportPDF, generateCSV } from "../utils/pdfExport.js";
+
+export const downloadSaleReceipt = asyncHandler(async (req, res) => {
+  const sale = await pharmacyService.getPharmacySale(req.params.id, req.context || {});
+  
+  const pdfBuffer = await generatePharmacyReceiptPDF(sale, sale.items);
+  
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="receipt_${sale.saleNumber}.pdf"`);
+  res.send(pdfBuffer);
+});
+
+export const downloadSalesReport = asyncHandler(async (req, res) => {
+  const format = req.query.format || 'pdf';
+  const filters = {
+    startDate: req.query.startDate,
+    endDate: req.query.endDate,
+    payerType: req.query.payerType
+  };
+  
+  const result = await pharmacyService.listPharmacySales(filters, req.context || {});
+  const sales = result.data;
+  
+  if (format === 'csv') {
+    const fields = ['saleNumber', 'createdAt', 'patientName', 'payerType', 'grossAmount', 'discountAmount', 'netAmount', 'paymentStatus', 'saleStatus'];
+    const csvData = generateCSV(sales, fields);
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="pharmacy_sales_report.csv"');
+    res.send(csvData);
+  } else {
+    const pdfBuffer = await generateSalesReportPDF(filters, sales);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="pharmacy_sales_report.pdf"');
+    res.send(pdfBuffer);
+  }
+});

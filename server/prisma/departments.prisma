@@ -1,0 +1,151 @@
+// Enums for Department Management
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ServiceUnitStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum DepartmentType {
+  CLINICAL
+  DIAGNOSTIC
+  PHARMACY
+  ADMINISTRATIVE
+  FINANCE
+  SUPPORT
+  OTHER
+}
+
+enum DepartmentAuditAction {
+  DEPARTMENT_CREATED
+  DEPARTMENT_UPDATED
+  DEPARTMENT_ACTIVATED
+  DEPARTMENT_DEACTIVATED
+  DEPARTMENT_ARCHIVED
+  SERVICE_UNIT_CREATED
+  SERVICE_UNIT_UPDATED
+  SERVICE_UNIT_ACTIVATED
+  SERVICE_UNIT_DEACTIVATED
+  USER_ASSIGNED
+  USER_REMOVED
+  MANAGER_ASSIGNED
+}
+
+// Department Model
+model Department {
+  id              String           @id @default(uuid())
+
+  name            String
+  code            String           @unique
+  description     String?
+
+  departmentType  DepartmentType   @default(OTHER)
+  status          DepartmentStatus @default(ACTIVE)
+
+  managerId       String?
+
+  location        String?
+  phone           String?
+  email           String?
+
+  createdById     String?
+  updatedById     String?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  serviceUnits    ServiceUnit[]
+  userAssignments DepartmentUserAssignment[]
+  auditLogs       DepartmentAuditLog[]
+
+  @@index([name])
+  @@index([code])
+  @@index([status])
+  @@index([departmentType])
+}
+
+// Service Unit Model
+model ServiceUnit {
+  id             String            @id @default(uuid())
+
+  departmentId   String
+
+  name           String
+  code           String            @unique
+  description    String?
+
+  status         ServiceUnitStatus @default(ACTIVE)
+
+  location       String?
+
+  createdById    String?
+  updatedById    String?
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  department     Department        @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId])
+  @@index([status])
+}
+
+// Department User Assignment Model
+model DepartmentUserAssignment {
+  id             String     @id @default(uuid())
+
+  departmentId   String
+  userId         String
+
+  serviceUnitId  String?
+
+  isPrimary      Boolean    @default(false)
+  isActive       Boolean    @default(true)
+
+  assignedById   String?
+  assignedAt     DateTime   @default(now())
+
+  removedById    String?
+  removedAt      DateTime?
+
+  department     Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([departmentId, userId, serviceUnitId])
+  @@index([departmentId])
+  @@index([userId])
+}
+
+// Department Audit Log Model
+model DepartmentAuditLog {
+  id             String                @id @default(uuid())
+
+  departmentId   String?
+
+  actorId        String?
+
+  action         DepartmentAuditAction
+
+  entityType     String
+  entityId       String
+
+  previousValues Json?
+  newValues      Json?
+
+  reason         String?
+
+  ipAddress      String?
+  userAgent      String?
+
+  createdAt      DateTime              @default(now())
+
+  department     Department?           @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId])
+  @@index([actorId])
+  @@index([action])
+}
