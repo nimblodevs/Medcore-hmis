@@ -96,6 +96,84 @@ enum InvoiceStatus {
   REVERSED
 }
 
+enum PatientStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+  DECEASED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNKNOWN
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  UNKNOWN
+}
+
+enum PayerType {
+  CASH
+  INSURANCE
+  CORPORATE
+  SHA
+  PATIENT_CREDIT
+}
+
+enum VisitType {
+  OUTPATIENT
+  INPATIENT
+  EMERGENCY
+  DAYCARE
+  WALKIN
+  REFERRAL
+  REVIEW
+  FOLLOW_UP
+}
+
+enum VisitStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PatientDocumentType {
+  NATIONAL_ID
+  PASSPORT
+  BIRTH_CERTIFICATE
+  DRIVING_LICENSE
+  OTHER
+}
+
+enum PatientAlertType {
+  ALLERGY
+  FALL_RISK
+  VIP
+  SECURITY
+  PAYMENT_REQUIRED
+  CLINICAL_WARNING
+  OTHER
+}
+
+enum PatientAuditAction {
+  PATIENT_CREATED
+  PATIENT_UPDATED
+  PATIENT_STATUS_CHANGED
+  VISIT_CREATED
+  VISIT_UPDATED
+  VISIT_CANCELLED
+  DOCUMENT_UPLOADED
+  ALERT_CREATED
+  ALERT_RESOLVED
+}
+
 enum VisitType {
   OUTPATIENT
   INPATIENT
@@ -439,35 +517,112 @@ model UserDepartment {
 }
 
 model Patient {
-  id                 String    @id @default(uuid()) @db.Uuid
-  tenantId           String    @db.Uuid
-  branchId           String    @db.Uuid
-  uhid               String
+  id                 String             @id @default(uuid()) @db.Uuid
+  tenantId           String             @db.Uuid
+  branchId           String             @db.Uuid
+  
+  // Primary identifiers
+  hospitalNumber     String             @unique @map("uhid")
   firstName          String
   middleName         String?
   lastName           String
+  
+  // Demographics
+  gender             Gender             @default(UNKNOWN)
   dateOfBirth        DateTime?
-  gender             String?
+  maritalStatus      MaritalStatus      @default(UNKNOWN)
+  
+  // National IDs
+  nationalId         String?
+  passportNumber     String?
+  
+  // Contact information
   phone              String?
+  alternativePhone   String?
   email              String?
-  createdById        String?   @db.Uuid
-  updatedById        String?   @db.Uuid
+  
+  // Address
+  address            String?
+  county             String?
+  city               String?
+  
+  // Status
+  status             PatientStatus      @default(ACTIVE)
+  
+  // Audit fields
+  createdById        String?            @db.Uuid
+  updatedById        String?            @db.Uuid
   deletedAt          DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  branch             Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  visits             Visit[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  
+  // Relations
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  contacts           PatientContact[]
+  visits             PatientVisit[]
+  payerProfiles      PatientPayerProfile[]
+  documents          PatientDocument[]
+  alerts             PatientAlert[]
+  auditLogs          PatientAuditLog[]
   invoices           Invoice[]
   payments           Payment[]
   receipts           Receipt[]
   claims             Claim[]
   prescriptions      Prescription[]
 
-  @@unique([tenantId, uhid])
+  @@unique([tenantId, hospitalNumber])
+  @@index([firstName])
+  @@index([lastName])
+  @@index([phone])
+  @@index([nationalId])
   @@index([tenantId, branchId])
 }
 
+model PatientVisit {
+  id                 String        @id @default(uuid()) @db.Uuid
+  tenantId           String        @db.Uuid
+  branchId           String        @db.Uuid
+  patientId          String        @db.Uuid
+  
+  visitNumber        String        @unique @map("visitNo")
+  visitType          VisitType     @default(OUTPATIENT)
+  status             VisitStatus   @default(OPEN)
+  
+  payerType          PayerType     @default(CASH)
+  payerProfileId     String?
+  
+  departmentName     String?
+  clinicName         String?
+  attendingDoctorId  String?
+  
+  checkInAt          DateTime      @default(now())
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  
+  notes              String?
+  
+  createdById        String?       @db.Uuid
+  updatedById        String?       @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  
+  tenant             Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient            Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  invoices           Invoice[]
+  claims             Claim[]
+  prescriptions      Prescription[]
+
+  @@unique([tenantId, visitNumber])
+  @@index([patientId])
+  @@index([status])
+  @@index([tenantId, branchId, patientId])
+}
+
+// Legacy Visit model alias for backward compatibility
 model Visit {
   id                 String    @id @default(uuid()) @db.Uuid
   tenantId           String    @db.Uuid
@@ -491,6 +646,162 @@ model Visit {
 
   @@unique([tenantId, visitNo])
   @@index([tenantId, branchId, patientId])
+}
+
+model PatientContact {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  branchId       String   @db.Uuid
+  
+  patientId      String   @db.Uuid
+  
+  fullName       String
+  relationship   String
+  phone          String
+  email          String?
+  address        String?
+  
+  isEmergency    Boolean  @default(false)
+  isPrimary      Boolean  @default(false)
+  
+  createdById    String?  @db.Uuid
+  updatedById    String?  @db.Uuid
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([tenantId, branchId])
+}
+
+model PatientPayerProfile {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  branchId           String    @db.Uuid
+  
+  patientId          String    @db.Uuid
+  
+  payerType          PayerType
+  
+  insuranceProvider  String?
+  policyNumber       String?
+  memberNumber       String?
+  
+  corporateAccountId String?
+  creditAccountId    String?
+  
+  isDefault          Boolean   @default(false)
+  isActive           Boolean   @default(true)
+  
+  notes              String?
+  
+  createdById        String?   @db.Uuid
+  updatedById        String?   @db.Uuid
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient            Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([payerType])
+  @@index([tenantId, branchId])
+}
+
+model PatientDocument {
+  id              String              @id @default(uuid()) @db.Uuid
+  tenantId        String              @db.Uuid
+  branchId        String              @db.Uuid
+  
+  patientId       String              @db.Uuid
+  
+  documentType    PatientDocumentType
+  
+  fileName        String
+  fileUrl         String
+  mimeType        String?
+  fileSize        Int?
+  
+  notes           String?
+  
+  uploadedById    String?           @db.Uuid
+  uploadedAt      DateTime            @default(now())
+  deletedAt       DateTime?
+  
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient         Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([tenantId, branchId])
+}
+
+model PatientAlert {
+  id             String           @id @default(uuid()) @db.Uuid
+  tenantId       String           @db.Uuid
+  branchId       String           @db.Uuid
+  
+  patientId      String           @db.Uuid
+  
+  alertType      PatientAlertType
+  
+  title          String
+  description    String?
+  
+  isActive       Boolean          @default(true)
+  
+  createdById    String?          @db.Uuid
+  resolvedById   String?          @db.Uuid
+  resolvedAt     DateTime?
+  deletedAt      DateTime?
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient        Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([isActive])
+  @@index([tenantId, branchId])
+}
+
+model PatientAuditLog {
+  id             String             @id @default(uuid()) @db.Uuid
+  tenantId       String             @db.Uuid
+  branchId       String             @db.Uuid
+  
+  patientId      String?            @db.Uuid
+  actorId        String?            @db.Uuid
+  
+  action         PatientAuditAction
+  
+  entityType     String
+  entityId       String
+  
+  previousValues Json?
+  newValues      Json?
+  
+  ipAddress      String?
+  userAgent      String?
+  
+  createdAt      DateTime           @default(now())
+  
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient        Patient?           @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([actorId])
+  @@index([action])
+  @@index([tenantId, branchId])
 }
 
 model CreditCustomer {
