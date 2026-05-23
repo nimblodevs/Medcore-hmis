@@ -226,6 +226,7 @@ model User {
   branches         UserBranch[]
   departments      UserDepartment[]
   auditLogs        AuditLog[]
+  cashierProfile   CashierProfile?
 
   @@unique([tenantId, staffId])
   @@index([tenantId])
