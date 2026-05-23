@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-
 import { Loader2 } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 const PatientRegistration = lazy(() => import("./Patient/RegistrationForm"));
 const PatientList = lazy(() => import("./Patient/PatientList"));
@@ -25,10 +26,15 @@ const StockPage = lazy(() => import("../features/pharmacy/pages/StockPage"));
 const DispensingPage = lazy(() => import("../features/pharmacy/pages/DispensingPage"));
 const PurchasesPage = lazy(() => import("../features/pharmacy/pages/PurchasesPage"));
 const PharmacyReportsPage = lazy(() => import("../features/pharmacy/pages/ReportsPage"));
-const UsersPage = lazy(() => import("./UserManagement/UsersPage"));
-const RolesPage = lazy(() => import("./UserManagement/RolesPage"));
-const DepartmentsPage = lazy(() => import("./UserManagement/DepartmentsPage"));
-const BranchesPage = lazy(() => import("./UserManagement/BranchesPage"));
+const LoginPage = lazy(() => import("../features/auth/pages/LoginPage"));
+const ProfilePage = lazy(() => import("../features/auth/pages/ProfilePage"));
+const UsersPage = lazy(() => import("../features/users/pages/UsersPage"));
+const UserDetailPage = lazy(() => import("../features/users/pages/UserDetailPage"));
+const CashManagementDashboardPage = lazy(() => import("../features/cash/pages/CashManagementDashboardPage"));
+const CashCountersPage = lazy(() => import("../features/cash/pages/CashCountersPage"));
+const CashierProfilesPage = lazy(() => import("../features/cash/pages/CashierProfilesPage"));
+const CashSessionsPage = lazy(() => import("../features/cash/pages/CashSessionsPage"));
+const CashSessionDetailsPage = lazy(() => import("../features/cash/pages/CashSessionDetailsPage"));
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
