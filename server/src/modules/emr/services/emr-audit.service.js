@@ -327,3 +327,78 @@ export async function recordDischargeSummaryCreated(tx, encounterId, patientId, 
     userAgent
   });
 }
+
+export async function recordDischargeSummarySigned(tx, encounterId, patientId, actorId, dischargeId, previousValues, newValues, ipAddress, userAgent) {
+  return createEmrAuditLog(tx, {
+    encounterId,
+    patientId,
+    actorId,
+    action: EmrAuditAction.DISCHARGE_SUMMARY_SIGNED,
+    entityType: 'EmrDischargeSummary',
+    entityId: dischargeId,
+    previousValues,
+    newValues,
+    ipAddress,
+    userAgent
+  });
+}
+
+export async function recordAllergyCreated(tx, encounterId, patientId, actorId, allergyId, previousValues, newValues, ipAddress, userAgent) {
+  return createEmrAuditLog(tx, {
+    encounterId,
+    patientId,
+    actorId,
+    action: EmrAuditAction.ALLERGY_CREATED,
+    entityType: 'EmrAllergy',
+    entityId: allergyId,
+    previousValues,
+    newValues,
+    ipAddress,
+    userAgent
+  });
+}
+
+export async function recordAllergyResolved(tx, encounterId, patientId, actorId, allergyId, previousValues, newValues, ipAddress, userAgent) {
+  return createEmrAuditLog(tx, {
+    encounterId,
+    patientId,
+    actorId,
+    action: EmrAuditAction.ALLERGY_RESOLVED,
+    entityType: 'EmrAllergy',
+    entityId: allergyId,
+    previousValues,
+    newValues,
+    ipAddress,
+    userAgent
+  });
+}
+
+export async function recordNoteVoided(tx, encounterId, patientId, actorId, noteId, previousValues, newValues, ipAddress, userAgent) {
+  return createEmrAuditLog(tx, {
+    encounterId,
+    patientId,
+    actorId,
+    action: EmrAuditAction.NOTE_VOIDED,
+    entityType: 'EmrClinicalNote',
+    entityId: noteId,
+    previousValues,
+    newValues,
+    ipAddress,
+    userAgent
+  });
+}
+
+export async function recordPrescriptionCancelled(tx, encounterId, patientId, actorId, prescriptionId, previousValues, newValues, ipAddress, userAgent) {
+  return createEmrAuditLog(tx, {
+    encounterId,
+    patientId,
+    actorId,
+    action: EmrAuditAction.PRESCRIPTION_CANCELLED,
+    entityType: 'EmrPrescription',
+    entityId: prescriptionId,
+    previousValues,
+    newValues,
+    ipAddress,
+    userAgent
+  });
+}
