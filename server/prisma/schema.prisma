@@ -177,6 +177,82 @@ enum PatientAuditAction {
 enum VisitType {
   OUTPATIENT
   INPATIENT
+  EMERGENCY
+  DAYCARE
+  WALKIN
+  REFERRAL
+  REVIEW
+  FOLLOW_UP
+}
+
+// EMR Enums
+enum EmrEncounterStatus {
+  OPEN
+  IN_PROGRESS
+  READY_FOR_DISCHARGE
+  CLOSED
+  CANCELLED
+}
+
+enum ClinicalRecordStatus {
+  DRAFT
+  SIGNED
+  AMENDED
+  VOIDED
+}
+
+enum TriagePriority {
+  RED
+  ORANGE
+  YELLOW
+  GREEN
+  BLUE
+  UNKNOWN
+}
+
+enum DiagnosisType {
+  PROVISIONAL
+  FINAL
+  DIFFERENTIAL
+}
+
+enum OrderType {
+  LAB
+  RADIOLOGY
+  PHARMACY
+  PROCEDURE
+  REFERRAL
+}
+
+enum OrderStatus {
+  DRAFT
+  ORDERED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AllergySeverity {
+  MILD
+  MODERATE
+  SEVERE
+  UNKNOWN
+}
+
+enum EmrAuditAction {
+  ENCOUNTER_CREATED
+  ENCOUNTER_UPDATED
+  ENCOUNTER_CLOSED
+  VITALS_RECORDED
+  TRIAGE_RECORDED
+  NOTE_CREATED
+  NOTE_SIGNED
+  NOTE_AMENDED
+  DIAGNOSIS_ADDED
+  ORDER_CREATED
+  ORDER_CANCELLED
+  PRESCRIPTION_CREATED
+  DISCHARGE_SUMMARY_CREATED
 }
 
 enum PaymentMethod {
@@ -798,6 +874,314 @@ model PatientAuditLog {
   branch         Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
   patient        Patient?           @relation(fields: [patientId], references: [id])
 
+  @@index([patientId])
+  @@index([actorId])
+  @@index([action])
+  @@index([tenantId, branchId])
+}
+
+// EMR Models
+model EmrEncounter {
+  id                 String             @id @default(uuid()) @db.Uuid
+  tenantId           String             @db.Uuid
+  branchId           String             @db.Uuid
+  
+  patientId          String             @db.Uuid
+  visitId            String             @unique @db.Uuid
+  status             EmrEncounterStatus @default(OPEN)
+  
+  chiefComplaint     String?
+  presentingHistory  String?
+  assignedDoctorId   String?
+  assignedNurseId    String?
+  
+  startedAt          DateTime           @default(now())
+  closedAt           DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  
+  createdById        String?            @db.Uuid
+  updatedById        String?            @db.Uuid
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  patient            Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  
+  triageRecords      EmrTriage[]
+  vitals             EmrVitalSign[]
+  notes              EmrClinicalNote[]
+  diagnoses          EmrDiagnosis[]
+  orders             EmrOrder[]
+  prescriptions      EmrPrescription[]
+  allergies          EmrAllergy[]
+  dischargeSummary   EmrDischargeSummary?
+  auditLogs          EmrAuditLog[]
+
+  @@index([patientId])
+  @@index([visitId])
+  @@index([status])
+  @@index([tenantId, branchId])
+}
+
+model EmrTriage {
+  id           String               @id @default(uuid()) @db.Uuid
+  tenantId     String               @db.Uuid
+  branchId     String               @db.Uuid
+  encounterId  String               @db.Uuid
+  
+  priority     TriagePriority       @default(UNKNOWN)
+  complaint    String?
+  notes        String?
+  
+  recordedById String?              @db.Uuid
+  recordedAt   DateTime             @default(now())
+  status       ClinicalRecordStatus @default(SIGNED)
+  
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch       Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter    EmrEncounter         @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([priority])
+  @@index([tenantId, branchId])
+}
+
+model EmrVitalSign {
+  id                 String               @id @default(uuid()) @db.Uuid
+  tenantId           String               @db.Uuid
+  branchId           String               @db.Uuid
+  encounterId        String               @db.Uuid
+  
+  temperatureCelsius Decimal?             @db.Decimal(5,2)
+  systolicBp         Int?
+  diastolicBp        Int?
+  pulseRate          Int?
+  respiratoryRate    Int?
+  oxygenSaturation   Int?
+  weightKg           Decimal?             @db.Decimal(6,2)
+  heightCm           Decimal?             @db.Decimal(6,2)
+  bmi                Decimal?             @db.Decimal(6,2)
+  painScore          Int?
+  notes              String?
+  
+  recordedById       String?              @db.Uuid
+  recordedAt         DateTime             @default(now())
+  status             ClinicalRecordStatus @default(SIGNED)
+  
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter          EmrEncounter         @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([recordedAt])
+  @@index([tenantId, branchId])
+}
+
+model EmrAllergy {
+  id           String          @id @default(uuid()) @db.Uuid
+  tenantId     String          @db.Uuid
+  branchId     String          @db.Uuid
+  encounterId  String          @db.Uuid
+  patientId    String          @db.Uuid
+  
+  allergen     String
+  reaction     String?
+  severity     AllergySeverity @default(UNKNOWN)
+  isActive     Boolean         @default(true)
+  
+  recordedById String?         @db.Uuid
+  resolvedById String?         @db.Uuid
+  resolvedAt   DateTime?
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch       Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter    EmrEncounter    @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([encounterId])
+  @@index([isActive])
+  @@index([tenantId, branchId])
+}
+
+model EmrClinicalNote {
+  id              String               @id @default(uuid()) @db.Uuid
+  tenantId        String               @db.Uuid
+  branchId        String               @db.Uuid
+  encounterId     String               @db.Uuid
+  
+  subjective      String?
+  objective       String?
+  assessment      String?
+  plan            String?
+  noteText        String?
+  
+  status          ClinicalRecordStatus @default(DRAFT)
+  signedById      String?              @db.Uuid
+  signedAt        DateTime?
+  amendedFromId   String?              @db.Uuid
+  amendmentReason String?
+  
+  createdById     String?              @db.Uuid
+  updatedById     String?              @db.Uuid
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter       EmrEncounter         @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([status])
+  @@index([tenantId, branchId])
+}
+
+model EmrDiagnosis {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @db.Uuid
+  branchId      String        @db.Uuid
+  encounterId   String        @db.Uuid
+  
+  diagnosisType DiagnosisType
+  code          String?
+  description   String
+  notes         String?
+  
+  recordedById  String?       @db.Uuid
+  recordedAt    DateTime      @default(now())
+  
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch        Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter     EmrEncounter  @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([code])
+  @@index([tenantId, branchId])
+}
+
+model EmrOrder {
+  id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String      @db.Uuid
+  branchId           String      @db.Uuid
+  encounterId        String      @db.Uuid
+  
+  orderType          OrderType
+  orderStatus        OrderStatus @default(DRAFT)
+  itemCode           String?
+  description        String
+  priority           String?
+  targetModule       String?
+  targetRecordId     String?
+  notes              String?
+  
+  orderedById        String?     @db.Uuid
+  orderedAt          DateTime?
+  cancelledById      String?     @db.Uuid
+  cancelledAt        DateTime?
+  cancellationReason String?
+  
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  
+  tenant             Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter          EmrEncounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([orderType])
+  @@index([orderStatus])
+  @@index([tenantId, branchId])
+}
+
+model EmrPrescription {
+  id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String      @db.Uuid
+  branchId           String      @db.Uuid
+  encounterId        String      @db.Uuid
+  
+  pharmacySaleId     String?     @db.Uuid
+  medicationName     String
+  genericName        String?
+  dosage             String?
+  frequency          String?
+  duration           String?
+  route              String?
+  quantity           Int?
+  instructions       String?
+  
+  status             OrderStatus @default(ORDERED)
+  prescribedById     String?     @db.Uuid
+  prescribedAt       DateTime    @default(now())
+  cancelledById      String?     @db.Uuid
+  cancelledAt        DateTime?
+  cancellationReason String?
+  
+  tenant             Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter          EmrEncounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([status])
+  @@index([tenantId, branchId])
+}
+
+model EmrDischargeSummary {
+  id                    String               @id @default(uuid()) @db.Uuid
+  tenantId              String               @db.Uuid
+  branchId              String               @db.Uuid
+  encounterId           String               @unique @db.Uuid
+  
+  finalDiagnosis        String?
+  treatmentGiven        String?
+  proceduresDone        String?
+  dischargeCondition    String?
+  dischargeMedications  String?
+  followUpInstructions  String?
+  
+  status                ClinicalRecordStatus @default(DRAFT)
+  signedById            String?              @db.Uuid
+  signedAt              DateTime?
+  
+  createdById           String?              @db.Uuid
+  updatedById           String?              @db.Uuid
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  
+  tenant                Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter             EmrEncounter         @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+}
+
+model EmrAuditLog {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @db.Uuid
+  branchId       String        @db.Uuid
+  
+  encounterId    String?       @db.Uuid
+  patientId      String?       @db.Uuid
+  actorId        String?       @db.Uuid
+  
+  action         EmrAuditAction
+  entityType     String
+  entityId       String
+  previousValues Json?
+  newValues      Json?
+  reason         String?
+  
+  ipAddress      String?
+  userAgent      String?
+  
+  createdAt      DateTime      @default(now())
+  
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  encounter      EmrEncounter? @relation(fields: [encounterId], references: [id])
+
+  @@index([encounterId])
   @@index([patientId])
   @@index([actorId])
   @@index([action])

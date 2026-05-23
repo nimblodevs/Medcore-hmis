@@ -13,6 +13,7 @@ import receiptRoutes from "./receipt.routes.js";
 import reportRoutes from "./report.routes.js";
 import pharmacyRoutes from "./pharmacy.routes.js";
 import cashRoutes from "./cash.routes.js";
+import emrRoutes from "./emr.routes.js";
 import authenticateUser from "../middlewares/authenticateUser.js";
 import tenantScope from "../middlewares/tenantScope.js";
 import branchScope from "../middlewares/branchScope.js";
@@ -35,5 +36,6 @@ router.use("/receipts", receiptRoutes);
 router.use("/reports", reportRoutes);
 router.use("/pharmacy", pharmacyRoutes);
 router.use("/cash", cashRoutes);
+router.use("/emr", emrRoutes);
 
 export default router;
