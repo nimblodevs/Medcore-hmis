@@ -126,6 +126,13 @@ model Tenant {
   saleItems          SaleItem[]
   supplierReturns    SupplierReturn[]
   supplierReturnItems SupplierReturnItem[]
+  // Cash management module relations
+  cashCounters       CashCounter[]
+  cashierProfiles    CashierProfile[]
+  cashSessions       CashSession[]
+  cashPayments       CashPayment[]
+  cashRefunds        CashRefund[]
+  cashHandovers      CashHandover[]
 }
 
 model Branch {
@@ -178,6 +185,13 @@ model Branch {
   supplierReturns    SupplierReturn[]
   transfersFrom      StockTransfer[]   @relation("TransferFromBranch")
   transfersTo        StockTransfer[]   @relation("TransferToBranch")
+  // Cash management module relations
+  cashCounters       CashCounter[]
+  cashierProfiles    CashierProfile[]
+  cashSessions       CashSession[]
+  cashPayments       CashPayment[]
+  cashRefunds        CashRefund[]
+  cashHandovers      CashHandover[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -212,6 +226,7 @@ model User {
   branches         UserBranch[]
   departments      UserDepartment[]
   auditLogs        AuditLog[]
+  cashierProfile   CashierProfile?
 
   @@unique([tenantId, staffId])
   @@index([tenantId])
@@ -670,6 +685,60 @@ model AuditLog {
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, branchId, action, createdAt])
+}
+
+model CashCounterAudit {
+  id          String   @id @default(uuid()) @db.Uuid
+  cashCounterId String @db.Uuid
+  action      String
+  details     Json?
+  createdAt   DateTime @default(now())
+  cashCounter CashCounter @relation(fields: [cashCounterId], references: [id], onDelete: Cascade)
+}
+
+model CashierProfileAudit {
+  id             String   @id @default(uuid()) @db.Uuid
+  cashierProfileId String @db.Uuid
+  action         String
+  details        Json?
+  createdAt      DateTime @default(now())
+  cashierProfile CashierProfile @relation(fields: [cashierProfileId], references: [id], onDelete: Cascade)
+}
+
+model CashSessionAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @db.Uuid
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  session   CashSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model CashPaymentAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  paymentId String   @db.Uuid
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  payment   CashPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+model CashRefundAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  refundId  String   @db.Uuid
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  refund    CashRefund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+}
+
+model CashHandoverAudit {
+  id         String   @id @default(uuid()) @db.Uuid
+  handoverId String   @db.Uuid
+  action     String
+  details    Json?
+  createdAt  DateTime @default(now())
+  handover   CashHandover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
 }
 
 model ReferenceSequence {
@@ -1367,4 +1436,213 @@ model SupplierReturnItem {
 
   @@index([returnId])
   @@index([batchId])
+}
+
+// ==================== CASH MANAGEMENT MODULE ====================
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+  VOIDED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+  CANCELLED
+}
+
+model CashCounter {
+  id              String        @id @default(uuid()) @db.Uuid
+  tenantId        String        @db.Uuid
+  branchId        String        @db.Uuid
+  name            String
+  code            String
+  department      String?
+  description     String?
+  isActive        Boolean       @default(true)
+  defaultCurrency String        @default("KES")
+  supervisorId    String?       @db.Uuid
+  createdById     String?       @db.Uuid
+  updatedById     String?       @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  sessions        CashSession[]
+  cashierProfiles CashierProfile[]
+  auditLogs       CashCounterAudit[]
+
+  @@unique([tenantId, branchId, code])
+  @@index([tenantId, branchId])
+}
+
+model CashierProfile {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  branchId          String        @db.Uuid
+  userId            String        @db.Uuid
+  staffNumber       String
+  firstName         String
+  lastName          String
+  email             String
+  phone             String?
+  department        String?
+  defaultCounterId  String?       @db.Uuid
+  supervisorId      String?       @db.Uuid
+  isActive          Boolean       @default(true)
+  createdById       String?       @db.Uuid
+  updatedById       String?       @db.Uuid
+  deletedAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultCounter    CashCounter?  @relation(fields: [defaultCounterId], references: [id], onDelete: SetNull)
+  sessions          CashSession[]
+  auditLogs         CashierProfileAudit[]
+
+  @@unique([tenantId, staffNumber])
+  @@unique([tenantId, userId])
+  @@index([tenantId, branchId])
+}
+
+model CashSession {
+  id                String            @id @default(uuid()) @db.Uuid
+  tenantId          String            @db.Uuid
+  branchId          String            @db.Uuid
+  counterId         String            @db.Uuid
+  cashierId         String            @db.Uuid
+  sessionNumber     String
+  status            CashSessionStatus @default(OPEN)
+  openingFloat      Decimal           @default(0) @db.Decimal(14, 2)
+  currency          String            @default("KES")
+  openingNotes      String?
+  expectedCash      Decimal?          @db.Decimal(14, 2)
+  actualCash        Decimal?          @db.Decimal(14, 2)
+  variance          Decimal?          @db.Decimal(14, 2)
+  closingNotes      String?
+  openedAt          DateTime          @default(now())
+  openedById        String?           @db.Uuid
+  closedAt          DateTime?
+  closedById        String?           @db.Uuid
+  approvedAt        DateTime?
+  approvedById      String?           @db.Uuid
+  rejectedAt        DateTime?
+  rejectedById      String?           @db.Uuid
+  rejectionReason   String?
+  createdById       String?           @db.Uuid
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch            @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  counter           CashCounter       @relation(fields: [counterId], references: [id], onDelete: Restrict)
+  cashier           CashierProfile    @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  payments          CashPayment[]
+  refunds           CashRefund[]
+  handover          CashHandover?
+  auditLogs         CashSessionAudit[]
+
+  @@unique([tenantId, sessionNumber])
+  @@index([tenantId, branchId, cashierId, status])
+  @@index([tenantId, branchId, counterId, status])
+}
+
+model CashPayment {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  branchId          String        @db.Uuid
+  sessionId         String        @db.Uuid
+  paymentMethod     PaymentMethod
+  amount            Decimal       @db.Decimal(14, 2)
+  referenceNo       String?
+  payerName         String?
+  payerDetails      String?
+  invoiceNo         String?
+  receiptNo         String?
+  notes             String?
+  createdById       String?       @db.Uuid
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  session           CashSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  auditLogs         CashPaymentAudit[]
+
+  @@index([tenantId, sessionId])
+  @@index([tenantId, branchId, createdAt])
+}
+
+model CashRefund {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  branchId          String        @db.Uuid
+  sessionId         String        @db.Uuid
+  refundNumber      String
+  status            RefundStatus  @default(PENDING)
+  originalPaymentId String?       @db.Uuid
+  originalReceiptNo String?
+  amount            Decimal       @db.Decimal(14, 2)
+  reason            String
+  refundMethod      PaymentMethod
+  referenceNo       String?
+  requestedById     String?       @db.Uuid
+  requestedAt       DateTime      @default(now())
+  approvedById      String?       @db.Uuid
+  approvedAt        DateTime?
+  rejectedById      String?       @db.Uuid
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  processedById     String?       @db.Uuid
+  processedAt       DateTime?
+  notes             String?
+  createdById       String?       @db.Uuid
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  session           CashSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  auditLogs         CashRefundAudit[]
+
+  @@unique([tenantId, refundNumber])
+  @@index([tenantId, sessionId, status])
+}
+
+model CashHandover {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  branchId          String        @db.Uuid
+  sessionId         String        @unique @db.Uuid
+  handoverNumber    String
+  totalCashCollected Decimal      @db.Decimal(14, 2)
+  totalRefunds      Decimal       @db.Decimal(14, 2)
+  netCash           Decimal       @db.Decimal(14, 2)
+  openingFloat      Decimal       @db.Decimal(14, 2)
+  expectedClosing   Decimal       @db.Decimal(14, 2)
+  actualCounted     Decimal       @db.Decimal(14, 2)
+  variance          Decimal       @db.Decimal(14, 2)
+  varianceReason    String?
+  submittedById     String?       @db.Uuid
+  submittedAt       DateTime      @default(now())
+  reviewedById      String?       @db.Uuid
+  reviewedAt        DateTime?
+  reviewStatus      String?
+  reviewNotes       String?
+  createdById       String?       @db.Uuid
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  session           CashSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  auditLogs         CashHandoverAudit[]
+
+  @@unique([tenantId, handoverNumber])
+  @@index([tenantId, sessionId])
 }
