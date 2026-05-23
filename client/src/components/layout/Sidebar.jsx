@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Users, 
   UserPlus,
+  User,
   ChevronDown,
   Calendar, 
   ClipboardList, 
@@ -26,6 +27,7 @@ import {
   UserCog,
   KeyRound,
   Network,
+  Wallet,
 } from "lucide-react";
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
@@ -172,6 +174,10 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
   );
   const [pharmacyMenuOpen, setPharmacyMenuOpen] = useState(
     ["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"].includes(activePage)
+  );
+  const cashManagementPages = ["cash_dashboard", "cash_counters", "cash_cashiers", "cash_sessions", "cash_payments", "cash_refunds", "cash_handovers", "cash_reports"];
+  const [cashMenuOpen, setCashMenuOpen] = useState(
+    cashManagementPages.includes(activePage)
   );
   const userManagementPages = ["user_management_users", "user_management_roles", "user_management_departments", "user_management_branches"];
   const [userManagementMenuOpen, setUserManagementMenuOpen] = useState(
@@ -453,6 +459,12 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
               active={activePage === "prescriptions"}
               onClick={() => onPageChange?.("prescriptions")} 
             />
+            <SidebarItem
+              icon={Wallet}
+              label="Cash Management"
+              active={activePage === "cash_dashboard" || activePage.startsWith("cash_")}
+              onClick={() => onPageChange?.("cash_dashboard")}
+            />
           </nav>
 
           <div className="mt-8 mb-4 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -464,6 +476,12 @@ const Sidebar = ({ isOpen, activePage = "patients", onPageChange }) => {
               label="Analytics" 
               active={activePage === "analytics"}
               onClick={() => onPageChange?.("analytics")} 
+            />
+            <SidebarItem
+              icon={User}
+              label="My Profile"
+              active={activePage === "profile"}
+              onClick={() => onPageChange?.("profile")}
             />
             <SidebarItem 
               icon={Database} 
