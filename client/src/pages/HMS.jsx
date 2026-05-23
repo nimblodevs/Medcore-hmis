@@ -10,6 +10,7 @@ import InvoiceManagementRoutes from "../features/invoice-management/routes";
 import PatientRoutes from "./Patient/routes";
 import FinanceRoutes from "./Finance/routes";
 import PharmacyRoutes from "../features/pharmacy/routes";
+import AppointmentRoutes from "../features/appointment-management/routes";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 const PageLoader = () => (
@@ -64,6 +65,13 @@ const HMS = () => {
                 {/* Pharmacy Routes */}
                 <Route path="/pharmacy/*" element={<PharmacyRoutes />} />
                 
+                {/* Appointment Management Routes */}
+                <Route path="/appointments/*" element={
+                  <ProtectedRoute roles={["RECEPTIONIST", "NURSE", "DOCTOR", "CLINICIAN", "ADMIN", "CLINIC_MANAGER"]} />
+                }>
+                  <Route index element={<AppointmentRoutes />} />
+                </Route>
+
                 {/* Dashboard */}
                 <Route path="/dashboard" element={
                   <div className="flex h-full items-center justify-center py-20">
@@ -75,8 +83,8 @@ const HMS = () => {
                 } />
                 
                 {/* Default Redirect */}
-                <Route path="/" element={<Navigate to="/patients/register" replace />} />
-                <Route path="*" element={<Navigate to="/patients/register" replace />} />
+                <Route path="/" element={<Navigate to="/appointments" replace />} />
+                <Route path="*" element={<Navigate to="/appointments" replace />} />
               </Routes>
             </Suspense>
           </div>
