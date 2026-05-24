@@ -2470,3 +2470,322 @@ model CashHandover {
   @@unique([tenantId, handoverNumber])
   @@index([tenantId, sessionId])
 }
+
+// ==================== CREDIT CONTROL MODULE ====================
+
+enum CreditControlCaseStatus {
+  OPEN
+  IN_PROGRESS
+  PROMISED_TO_PAY
+  DISPUTED
+  ESCALATED
+  ON_HOLD
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum CreditRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AgingBucket {
+  CURRENT
+  DAYS_1_30
+  DAYS_31_60
+  DAYS_61_90
+  DAYS_91_120
+  OVER_120
+}
+
+enum FollowUpActionType {
+  PHONE_CALL
+  EMAIL
+  SMS
+  LETTER
+  IN_PERSON_VISIT
+  INTERNAL_NOTE
+  PAYMENT_RECEIVED
+  DISPUTE_DISCUSSION
+  ESCALATION
+  OTHER
+}
+
+enum FollowUpOutcome {
+  NO_ANSWER
+  PROMISED_TO_PAY
+  PAYMENT_MADE
+  DISPUTED
+  REQUESTED_STATEMENT
+  ESCALATE
+  FOLLOW_UP_REQUIRED
+  RESOLVED
+  OTHER
+}
+
+enum CreditHoldStatus {
+  NONE
+  RECOMMENDED
+  APPROVED
+  ACTIVE
+  RELEASE_REQUESTED
+  RELEASED
+  REJECTED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  RESOLVED
+  CANCELLED
+}
+
+enum WriteOffRecommendationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  POSTED
+  CANCELLED
+}
+
+enum CreditControlAuditAction {
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_ASSIGNED
+  FOLLOW_UP_RECORDED
+  PROMISE_TO_PAY_CREATED
+  PROMISE_TO_PAY_UPDATED
+  CREDIT_HOLD_RECOMMENDED
+  CREDIT_HOLD_APPROVED
+  CREDIT_HOLD_RELEASED
+  DISPUTE_CREATED
+  DISPUTE_RESOLVED
+  WRITE_OFF_RECOMMENDED
+  WRITE_OFF_APPROVED
+  CASE_CLOSED
+}
+
+model CreditControlCase {
+  id                  String                  @id @default(uuid())
+  caseNumber          String                  @unique
+  tenantId            String                  @db.Uuid
+  branchId            String                  @db.Uuid
+  creditAccountId     String
+  primaryInvoiceId    String?
+  status              CreditControlCaseStatus @default(OPEN)
+  riskLevel           CreditRiskLevel         @default(LOW)
+  agingBucket         AgingBucket             @default(CURRENT)
+  outstandingAmount   Decimal                 @db.Decimal(12, 2)
+  overdueAmount       Decimal                 @default(0) @db.Decimal(12, 2)
+  daysOverdue         Int                     @default(0)
+  assignedCollectorId String?
+  assignedById        String?
+  assignedAt          DateTime?
+  openedAt            DateTime                @default(now())
+  closedAt            DateTime?
+  closedById          String?
+  closureReason       String?
+  nextFollowUpAt      DateTime?
+  summary             String?
+  notes               String?
+  createdById         String?
+  updatedById         String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  tenant              Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch              Branch                  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  followUps           CreditControlFollowUp[]
+  promises            PromiseToPay[]
+  disputes            CreditDispute[]
+  holds               CreditHold[]
+  writeOffs           WriteOffRecommendation[]
+  auditLogs           CreditControlAuditLog[]
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([creditAccountId])
+  @@index([status])
+  @@index([riskLevel])
+  @@index([agingBucket])
+  @@index([assignedCollectorId])
+  @@index([nextFollowUpAt])
+}
+
+model CreditControlFollowUp {
+  id             String              @id @default(uuid())
+  tenantId       String              @db.Uuid
+  branchId       String              @db.Uuid
+  caseId         String
+  actionType     FollowUpActionType
+  outcome        FollowUpOutcome
+  contactPerson  String?
+  contactPhone   String?
+  contactEmail   String?
+  notes          String
+  nextFollowUpAt DateTime?
+  recordedById   String?
+  recordedAt     DateTime            @default(now())
+
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case           CreditControlCase   @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([actionType])
+  @@index([outcome])
+  @@index([nextFollowUpAt])
+}
+
+model PromiseToPay {
+  id              String              @id @default(uuid())
+  tenantId        String              @db.Uuid
+  branchId        String              @db.Uuid
+  caseId          String
+  promisedAmount  Decimal             @db.Decimal(12, 2)
+  promisedDate    DateTime
+  notes           String?
+  isFulfilled     Boolean             @default(false)
+  fulfilledAt     DateTime?
+  fulfilledAmount Decimal?            @db.Decimal(12, 2)
+  createdById     String?
+  updatedById     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case            CreditControlCase   @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([promisedDate])
+  @@index([isFulfilled])
+}
+
+model CreditHold {
+  id              String              @id @default(uuid())
+  tenantId        String              @db.Uuid
+  branchId        String              @db.Uuid
+  caseId          String
+  creditAccountId String
+  status          CreditHoldStatus    @default(RECOMMENDED)
+  reason          String
+  recommendedById String?
+  recommendedAt   DateTime            @default(now())
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectedById    String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  releasedById    String?
+  releasedAt      DateTime?
+  releaseReason   String?
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case            CreditControlCase   @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([creditAccountId])
+  @@index([status])
+}
+
+model CreditDispute {
+  id             String              @id @default(uuid())
+  tenantId       String              @db.Uuid
+  branchId       String              @db.Uuid
+  caseId         String
+  creditAccountId String
+  invoiceId      String?
+  status         DisputeStatus       @default(OPEN)
+  disputeReason  String
+  disputedAmount Decimal?            @db.Decimal(12, 2)
+  openedById     String?
+  openedAt       DateTime            @default(now())
+  resolvedById   String?
+  resolvedAt     DateTime?
+  resolutionNotes String?
+
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch         Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case           CreditControlCase   @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([creditAccountId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model WriteOffRecommendation {
+  id                 String                       @id @default(uuid())
+  tenantId           String                       @db.Uuid
+  branchId           String                       @db.Uuid
+  caseId             String
+  creditAccountId    String
+  invoiceId          String?
+  amount             Decimal                      @db.Decimal(12, 2)
+  reason             String
+  status             WriteOffRecommendationStatus @default(PENDING)
+  recommendedById    String?
+  recommendedAt      DateTime                     @default(now())
+  approvedById       String?
+  approvedAt         DateTime?
+  rejectedById       String?
+  rejectedAt         DateTime?
+  rejectionReason    String?
+  postedAt           DateTime?
+  postedAdjustmentId String?
+
+  tenant             Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch                       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case               CreditControlCase            @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([creditAccountId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model CreditControlAuditLog {
+  id              String                   @id @default(uuid())
+  tenantId        String                   @db.Uuid
+  branchId        String                   @db.Uuid
+  caseId          String?
+  creditAccountId String?
+  actorId         String?
+  action          CreditControlAuditAction
+  entityType      String
+  entityId        String
+  previousValues  Json?
+  newValues       Json?
+  reason          String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime                 @default(now())
+
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch          Branch                   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  case            CreditControlCase?       @relation(fields: [caseId], references: [id])
+
+  @@index([tenantId])
+  @@index([branchId])
+  @@index([caseId])
+  @@index([creditAccountId])
+  @@index([actorId])
+  @@index([action])
+}
