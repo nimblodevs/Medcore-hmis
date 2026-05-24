@@ -5,19 +5,28 @@ node_modules/
 # Environment variables
 .env
 .env.local
-.env.*
-
-# IDE files
-.vscode/
-.idea/
+*.env.*
 
 # Logs
 *.log
 
-# Temp files
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 *.tmp
 
-# Build artifacts
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
 dist/
 build/
 target/
@@ -28,11 +37,12 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
+*.so
+*.egg-info/
+.eggs/
+.coverage
+.tox/
+.nox/
 
 # Node.js specific
 npm-debug.log*
@@ -43,12 +53,6 @@ yarn-error.log*
 *.db
 *.db-journal
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Prisma
+prisma/migrations/
 ```

@@ -3566,3 +3566,279 @@ model SchemeAuditLog {
   @@index([action])
   @@index([tenantId])
 }
+
+// ============================================================================
+// HOSPITAL BILLING MANAGEMENT SYSTEM
+// ============================================================================
+
+enum BillStatus {
+  DRAFT
+  OPEN
+  PARTIALLY_PAID
+  PAID
+  POSTED_TO_CREDIT
+  CANCELLED
+  REVERSED
+  WRITTEN_OFF
+}
+
+enum BillItemStatus {
+  PENDING
+  APPROVED
+  PAID
+  POSTED_TO_CREDIT
+  REVERSED
+  CANCELLED
+}
+
+enum BillingPayerType {
+  CASH
+  INSURANCE
+  CORPORATE
+  DIRECT_CORPORATE
+  SHA
+  PATIENT_CREDIT
+}
+
+enum BillingSourceType {
+  MANUAL
+  CONSULTATION
+  EMR_ORDER
+  PHARMACY
+  LABORATORY
+  RADIOLOGY
+  PROCEDURE
+  INPATIENT
+  THEATRE
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  CREDIT_POSTED
+  CANCELLED
+  REFUNDED
+}
+
+enum BillingAdjustmentType {
+  DISCOUNT
+  WAIVER
+  PRICE_OVERRIDE
+  REVERSAL
+  CORRECTION
+}
+
+enum BillingAuditAction {
+  BILL_CREATED
+  BILL_UPDATED
+  BILL_CANCELLED
+  BILL_ITEM_ADDED
+  BILL_ITEM_UPDATED
+  BILL_ITEM_REVERSED
+  DISCOUNT_APPLIED
+  WAIVER_APPLIED
+  PRICE_OVERRIDE_APPLIED
+  SCHEME_VALIDATED
+  CASH_PAYMENT_LINKED
+  CREDIT_POSTED
+  BILL_MARKED_PAID
+}
+
+model PatientBill {
+  id                    String           @id @default(uuid())
+  tenantId              String           @db.Uuid
+  branchId              String?          @db.Uuid
+  
+  billNumber            String           @unique
+  patientId             String
+  patientVisitId        String?
+  
+  payerType             BillingPayerType
+  debtorAccountId       String?
+  debtorSchemeId        String?
+  patientPayerProfileId String?
+  
+  status                BillStatus       @default(DRAFT)
+  paymentStatus         PaymentStatus    @default(UNPAID)
+  
+  grossAmount           Decimal          @default(0) @db.Decimal(14,2)
+  discountAmount        Decimal          @default(0) @db.Decimal(14,2)
+  waiverAmount          Decimal          @default(0) @db.Decimal(14,2)
+  netAmount             Decimal          @default(0) @db.Decimal(14,2)
+  
+  patientPayableAmount  Decimal          @default(0) @db.Decimal(14,2)
+  debtorPayableAmount   Decimal          @default(0) @db.Decimal(14,2)
+  
+  paidAmount            Decimal          @default(0) @db.Decimal(14,2)
+  outstandingAmount     Decimal          @default(0) @db.Decimal(14,2)
+  
+  creditInvoiceId       String?
+  cashSessionId         String?
+  
+  notes                 String?
+  
+  createdById           String?
+  updatedById           String?
+  cancelledById         String?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  postedToCreditById    String?
+  postedToCreditAt      DateTime?
+  
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  
+  items                 PatientBillItem[]
+  adjustments           BillingAdjustment[]
+  payments              BillingPaymentLink[]
+  auditLogs             BillingAuditLog[]
+  
+  @@index([patientId])
+  @@index([patientVisitId])
+  @@index([payerType])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([debtorAccountId])
+  @@index([debtorSchemeId])
+  @@index([tenantId])
+}
+
+model PatientBillItem {
+  id                    String            @id @default(uuid())
+  tenantId              String            @db.Uuid
+  branchId              String?           @db.Uuid
+  
+  billId                String
+  patientId             String
+  patientVisitId        String?
+  
+  sourceType            BillingSourceType
+  sourceRecordId        String?
+  
+  departmentId          String?
+  servicePointId        String?
+  
+  serviceCategory       String?
+  serviceCode           String?
+  description           String
+  
+  quantity              Decimal           @default(1) @db.Decimal(10,2)
+  unitPrice             Decimal           @db.Decimal(14,2)
+  
+  grossAmount           Decimal           @db.Decimal(14,2)
+  discountAmount        Decimal           @default(0) @db.Decimal(14,2)
+  waiverAmount          Decimal           @default(0) @db.Decimal(14,2)
+  netAmount             Decimal           @db.Decimal(14,2)
+  
+  patientPayableAmount  Decimal           @default(0) @db.Decimal(14,2)
+  debtorPayableAmount   Decimal           @default(0) @db.Decimal(14,2)
+  
+  copaymentAmount       Decimal           @default(0) @db.Decimal(14,2)
+  cashTopupAmount       Decimal           @default(0) @db.Decimal(14,2)
+  schemeCoveredAmount   Decimal           @default(0) @db.Decimal(14,2)
+  
+  status                BillItemStatus    @default(PENDING)
+  
+  requiresAuthorization Boolean           @default(false)
+  authorizationNumber   String?
+  
+  createdById           String?
+  approvedById          String?
+  approvedAt            DateTime?
+  reversedById          String?
+  reversedAt            DateTime?
+  reversalReason        String?
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  bill                  PatientBill       @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  @@index([billId])
+  @@index([patientId])
+  @@index([patientVisitId])
+  @@index([sourceType])
+  @@index([sourceRecordId])
+  @@index([departmentId])
+  @@index([servicePointId])
+  @@index([status])
+  @@index([tenantId])
+}
+
+model BillingAdjustment {
+  id                  String                @id @default(uuid())
+  tenantId            String                @db.Uuid
+  branchId            String?               @db.Uuid
+  
+  billId              String
+  billItemId          String?
+  
+  adjustmentType      BillingAdjustmentType
+  amount              Decimal               @db.Decimal(14,2)
+  reason              String
+  
+  approvedById        String?
+  approvedAt          DateTime?
+  createdById         String?
+  createdAt           DateTime              @default(now())
+  
+  bill                PatientBill           @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  @@index([billId])
+  @@index([billItemId])
+  @@index([adjustmentType])
+  @@index([tenantId])
+}
+
+model BillingPaymentLink {
+  id                  String       @id @default(uuid())
+  tenantId            String       @db.Uuid
+  branchId            String?      @db.Uuid
+  
+  billId              String
+  cashPaymentId       String?
+  cashSessionId       String?
+  
+  amount              Decimal      @db.Decimal(14,2)
+  linkedById          String?
+  linkedAt            DateTime     @default(now())
+  
+  bill                PatientBill  @relation(fields: [billId], references: [id], onDelete: Cascade)
+  
+  @@index([billId])
+  @@index([cashPaymentId])
+  @@index([cashSessionId])
+  @@index([tenantId])
+}
+
+model BillingAuditLog {
+  id              String             @id @default(uuid())
+  tenantId        String             @db.Uuid
+  
+  billId          String?
+  patientId       String?
+  actorId         String?
+  
+  action          BillingAuditAction
+  entityType      String
+  entityId        String
+  
+  previousValues  Json?
+  newValues       Json?
+  reason          String?
+  
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime           @default(now())
+  
+  bill            PatientBill?       @relation(fields: [billId], references: [id], onDelete: SetNull)
+  
+  @@index([billId])
+  @@index([patientId])
+  @@index([actorId])
+  @@index([action])
+  @@index([tenantId])
+}
