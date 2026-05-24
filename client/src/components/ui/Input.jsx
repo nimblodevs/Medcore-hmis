@@ -23,6 +23,7 @@ const Input = React.forwardRef(
       autoComplete,
       maxLength,
       max,
+      containerClassName,
       ...props
     },
     ref
@@ -35,19 +36,19 @@ const Input = React.forwardRef(
       : undefined;
 
     return (
-      <div className="w-full">
+      <div className={cn("w-full", containerClassName)}>
         {label && (
           <label
             htmlFor={id}
-            className="mb-1.5 block text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="mb-1.5 block text-sm font-semibold text-slate-800"
           >
             {label}
-            {required && <span className="ml-0.5 text-destructive">*</span>}
+            {required && <span className="ml-0.5 text-rose-600">*</span>}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground">
+            <div className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400">
               {leftIcon}
             </div>
           )}
@@ -69,27 +70,30 @@ const Input = React.forwardRef(
             aria-invalid={error ? "true" : undefined}
             aria-describedby={describedBy}
             className={cn(
-              "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+              "h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 shadow-xs transition-colors placeholder:text-slate-400 focus:outline-none focus:ring-4",
               leftIcon && "pl-10",
               rightIcon && "pr-10",
-              error && "border-destructive focus-visible:ring-destructive",
+              error
+                ? "border-red-300 focus:border-red-400 focus:ring-red-500/10"
+                : "border-slate-200 focus:border-cyan-400 focus:ring-cyan-600/10",
+              disabled ? "cursor-not-allowed bg-slate-100 text-slate-500" : "",
               className
             )}
             ref={ref}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground">
+            <div className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400">
               {rightIcon}
             </div>
           )}
         </div>
         {error ? (
-          <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-destructive">
+          <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-red-600">
             {error}
           </p>
         ) : helperText ? (
-          <p id={`${id}-helper`} className="mt-1.5 text-xs text-muted-foreground">
+          <p id={`${id}-helper`} className="mt-1.5 text-xs text-slate-500">
             {helperText}
           </p>
         ) : null}

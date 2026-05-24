@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatsGrid, StatsCard } from '@/components/layout/StatsCard';
+import { SectionCard } from '@/components/layout/SectionCard';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -11,11 +13,11 @@ import { useEncounters, useCreateEncounter } from '../hooks/useEmr';
 import { PatientHeader } from './components/shared/EmrComponents';
 
 const statusColors = {
-  OPEN: 'bg-blue-100 text-blue-800',
-  IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
+  OPEN: 'bg-cyan-100 text-cyan-800',
+  IN_PROGRESS: 'bg-amber-100 text-amber-800',
   READY_FOR_DISCHARGE: 'bg-purple-100 text-purple-800',
-  CLOSED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800',
+  CLOSED: 'bg-emerald-100 text-emerald-800',
+  CANCELLED: 'bg-rose-100 text-rose-800',
 };
 
 export const EmrDashboardPage = () => {
@@ -35,121 +37,129 @@ export const EmrDashboardPage = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">EMR Dashboard</h1>
-        <Button onClick={() => navigate('/emr/triage')}>New Triage</Button>
-      </div>
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="EMR Dashboard"
+        description="Manage patient encounters and clinical workflows"
+        breadcrumbs={[{ label: 'EMR', href: '/emr' }, { label: 'Dashboard' }]}
+        action={
+          <Button onClick={() => navigate('/emr/triage')}>
+            New Triage
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold">{stats.total}</div>
-            <p className="text-gray-500">Total Encounters</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-blue-600">{stats.open}</div>
-            <p className="text-gray-500">Open</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
-            <p className="text-gray-500">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-purple-600">{stats.readyForDischarge}</div>
-            <p className="text-gray-500">Ready for Discharge</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsGrid columns="quad">
+        <StatsCard
+          title="Total Encounters"
+          value={stats.total}
+          icon="users"
+          trend={stats.total > 0 ? 'positive' : 'neutral'}
+        />
+        <StatsCard
+          title="Open"
+          value={stats.open}
+          icon="activity"
+          variant="cyan"
+          trend="neutral"
+        />
+        <StatsCard
+          title="In Progress"
+          value={stats.inProgress}
+          icon="clock"
+          variant="amber"
+          trend="neutral"
+        />
+        <StatsCard
+          title="Ready for Discharge"
+          value={stats.readyForDischarge}
+          icon="check-circle"
+          variant="purple"
+          trend="neutral"
+        />
+      </StatsGrid>
 
       {/* Filter */}
-      <div className="mb-4">
-        <Label>Filter by Status</Label>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <option value="ALL">All</option>
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="READY_FOR_DISCHARGE">Ready for Discharge</option>
-          <option value="CLOSED">Closed</option>
-          <option value="CANCELLED">Cancelled</option>
-        </Select>
-      </div>
+      <SectionCard>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Label>Filter by Status</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <option value="ALL">All</option>
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="READY_FOR_DISCHARGE">Ready for Discharge</option>
+              <option value="CLOSED">Closed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </Select>
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Encounters Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Encounters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-gray-500">Loading...</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Visit Number</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Chief Complaint</TableHead>
-                  <TableHead>Started At</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {encounters.map((encounter) => (
-                  <TableRow key={encounter.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {encounter.patient?.firstName} {encounter.patient?.lastName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {encounter.patient?.hospitalNumber}
-                        </div>
+      <SectionCard title="Active Encounters">
+        {isLoading ? (
+          <p className="text-slate-500">Loading...</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Patient</TableHead>
+                <TableHead>Visit Number</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Chief Complaint</TableHead>
+                <TableHead>Started At</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {encounters.map((encounter) => (
+                <TableRow key={encounter.id} className="hover:bg-cyan-50/30">
+                  <TableCell>
+                    <div>
+                      <div className="font-medium text-slate-900">
+                        {encounter.patient?.firstName} {encounter.patient?.lastName}
                       </div>
-                    </TableCell>
-                    <TableCell>{encounter.visit?.visitNumber || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[encounter.status]}>
-                        {encounter.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {encounter.chiefComplaint || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(encounter.startedAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/emr/encounters/${encounter.id}`)}
-                      >
-                        Open
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {encounters.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                      No encounters found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      <div className="text-sm text-slate-500">
+                        {encounter.patient?.hospitalNumber}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-slate-700">{encounter.visit?.visitNumber || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge className={statusColors[encounter.status]}>
+                      {encounter.status.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-slate-700">
+                    {encounter.chiefComplaint || '-'}
+                  </TableCell>
+                  <TableCell className="text-slate-700">
+                    {new Date(encounter.startedAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/emr/encounters/${encounter.id}`)}
+                    >
+                      Open
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {encounters.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
+                    No encounters found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </SectionCard>
     </div>
   );
 };

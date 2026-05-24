@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Search, Eye, CheckCircle2 } from "lucide-react";
 import { useInvoiceStore } from "../../store/invoiceStore";
+import { PageHeader, SearchBar } from "../../components/layout/PageHeader";
+import { StatsCard, StatsGrid } from "../../components/layout/StatsCard";
 
 const formatKES = (value) =>
   `KES ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -48,59 +50,48 @@ const Invoices = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">OP Invoices</h1>
-          <p className="text-sm font-medium text-slate-500">
-            View finalized invoices and create an invoice from interim billings.
-          </p>
-        </div>
+      {/* Header */}
+      <PageHeader
+        breadcrumbs="Finance"
+        title="OP Invoices"
+        subtitle="View finalized invoices and create an invoice from interim billings."
+      >
         <button
           onClick={() => navigate("/finance/invoices/interim")}
-          className="flex items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-cyan-700 shadow-sm shadow-cyan-200"
+          className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-cyan-700/20 transition-all hover:bg-cyan-800 active:bg-cyan-900"
         >
           <Plus size={15} />
           Add Invoice
         </button>
-      </div>
+      </PageHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-              <FileText size={17} />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-500">Finalized Invoices</p>
-              <p className="text-base font-black text-slate-900">{finalizedInvoices.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-              <CheckCircle2 size={17} />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-500">Finalized Value</p>
-              <p className="text-base font-black text-slate-900">{formatKES(totalFinalizedAmount)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative min-w-[220px]">
-        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search invoice, patient, UHID, payment type, service point..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder-slate-400 focus:border-cyan-400"
+      {/* Stats Cards */}
+      <StatsGrid columns="dual">
+        <StatsCard
+          title="Finalized Invoices"
+          value={finalizedInvoices.length}
+          icon={FileText}
+          iconBg="bg-cyan-100"
+          iconColor="text-cyan-700"
         />
-      </div>
+        <StatsCard
+          title="Finalized Value"
+          value={formatKES(totalFinalizedAmount)}
+          icon={CheckCircle2}
+          iconBg="bg-emerald-100"
+          iconColor="text-emerald-700"
+        />
+      </StatsGrid>
 
-      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      {/* Search Bar */}
+      <SearchBar
+        placeholder="Search invoice, patient, UHID, payment type, service point..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {filteredInvoices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <FileText size={36} className="mb-2 opacity-20" />
@@ -120,7 +111,7 @@ const Invoices = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="transition-colors hover:bg-slate-50/60">
+                  <tr key={inv.id} className="transition-colors hover:bg-cyan-50/30">
                     <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-700">{inv.id}</td>
                     <td className="px-4 py-3.5">
                       <p className="text-xs font-semibold text-slate-900">{inv.patient?.name}</p>
