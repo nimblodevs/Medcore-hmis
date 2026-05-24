@@ -2789,3 +2789,780 @@ model CreditControlAuditLog {
   @@index([actorId])
   @@index([action])
 }
+
+// ============================================================================
+// DEBTORS ACCOUNTS MANAGEMENT SYSTEM
+// ============================================================================
+
+enum DebtorType {
+  INSURANCE
+  CORPORATE
+  DIRECT_CORPORATE
+  SHA
+  NGO
+  EMBASSY
+  GOVERNMENT
+  OTHER
+}
+
+enum DebtorAccountStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  SUSPENDED
+  CLOSED
+  ARCHIVED
+}
+
+enum DebtorContactType {
+  BILLING
+  CLAIMS
+  FINANCE
+  AUTHORIZATION
+  GENERAL
+}
+
+enum BillingCycle {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum StatementStatus {
+  GENERATED
+  SENT
+  ACKNOWLEDGED
+  DISPUTED
+  CANCELLED
+}
+
+enum ReconciliationStatus {
+  OPEN
+  IN_PROGRESS
+  MATCHED
+  PARTIALLY_MATCHED
+  DISPUTED
+  CLOSED
+  CANCELLED
+}
+
+enum DebtorDocumentType {
+  CONTRACT
+  CREDIT_AGREEMENT
+  TAX_CERTIFICATE
+  CONTACT_LIST
+  SHA_DOCUMENT
+  INSURANCE_PANEL_DOCUMENT
+  OTHER
+}
+
+enum DebtorAuditAction {
+  ACCOUNT_CREATED
+  ACCOUNT_UPDATED
+  ACCOUNT_ACTIVATED
+  ACCOUNT_ON_HOLD
+  ACCOUNT_SUSPENDED
+  ACCOUNT_CLOSED
+  ACCOUNT_ARCHIVED
+  CREDIT_LIMIT_UPDATED
+  CONTACT_CREATED
+  CONTACT_UPDATED
+  CONTRACT_CREATED
+  CONTRACT_UPDATED
+  STATEMENT_GENERATED
+  STATEMENT_SENT
+  RECONCILIATION_CREATED
+  RECONCILIATION_UPDATED
+  DOCUMENT_UPLOADED
+}
+
+enum CopaymentType {
+  FIXED_AMOUNT
+  PERCENTAGE
+  CONSULTATION_ONLY
+  SERVICE_POINT_BASED
+}
+
+enum CopaymentCategory {
+  CONSULTATION
+  PHARMACY
+  LABORATORY
+  RADIOLOGY
+  DENTAL
+  OPTICAL
+  PHYSIOTHERAPY
+  PROCEDURES
+  MATERNITY
+  EMERGENCY
+}
+
+enum LimitType {
+  PER_VISIT
+  PER_DAY
+  PER_MONTH
+  PER_YEAR
+  LIFETIME
+}
+
+enum OverLimitHandling {
+  BLOCK_SERVICE
+  ALLOW_CASH_TOPUP
+  REQUIRE_OVERRIDE
+  ALLOW_WITH_APPROVAL
+}
+
+// ============================================================================
+// DEBTOR SCHEME MANAGEMENT SYSTEM - NEW ENUMS
+// ============================================================================
+
+enum DebtorSchemeStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  EXPIRED
+  ARCHIVED
+}
+
+enum SchemeType {
+  OUTPATIENT
+  INPATIENT
+  COMPREHENSIVE
+  MATERNITY
+  DENTAL
+  OPTICAL
+  CHRONIC_CARE
+  EMERGENCY
+  CUSTOM
+}
+
+enum OverLimitAction {
+  BLOCK_SERVICE
+  ALLOW_CASH_TOPUP
+  REQUIRE_OVERRIDE
+  ALLOW_WITH_APPROVAL
+}
+
+enum SchemeServiceCategory {
+  CONSULTATION
+  PHARMACY
+  LABORATORY
+  RADIOLOGY
+  DENTAL
+  OPTICAL
+  PHYSIOTHERAPY
+  PROCEDURE
+  MATERNITY
+  EMERGENCY
+  INPATIENT
+  THEATRE
+  OTHER
+}
+
+enum SchemeAuditAction {
+  SCHEME_CREATED
+  SCHEME_UPDATED
+  SCHEME_ACTIVATED
+  SCHEME_DEACTIVATED
+  SCHEME_SUSPENDED
+  SCHEME_EXPIRED
+  SCHEME_ARCHIVED
+  DEPARTMENT_RULE_CREATED
+  DEPARTMENT_RULE_UPDATED
+  SERVICE_POINT_RULE_CREATED
+  SERVICE_POINT_RULE_UPDATED
+  OUTPATIENT_LIMIT_CREATED
+  OUTPATIENT_LIMIT_UPDATED
+  VISIT_LIMIT_CREATED
+  VISIT_LIMIT_UPDATED
+  COPAYMENT_CATEGORY_CREATED
+  COPAYMENT_CATEGORY_UPDATED
+  COPAYMENT_RULE_CREATED
+  COPAYMENT_RULE_UPDATED
+  AUTHORIZATION_RULE_CREATED
+  AUTHORIZATION_RULE_UPDATED
+}
+
+model DebtorAccount {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+
+  debtorCode            String              @unique
+  debtorName            String
+
+  debtorType            DebtorType
+
+  status                DebtorAccountStatus @default(DRAFT)
+
+  legalName             String?
+  taxPin                String?
+  registrationNumber    String?
+
+  email                 String?
+  phone                 String?
+  website               String?
+
+  physicalAddress       String?
+  postalAddress         String?
+  city                  String?
+  country               String?             @default("Kenya")
+
+  creditLimit           Decimal             @default(0) @db.Decimal(14,2)
+  currentBalance        Decimal             @default(0) @db.Decimal(14,2)
+  availableCredit       Decimal             @default(0) @db.Decimal(14,2)
+
+  paymentTermsDays      Int                 @default(30)
+  billingCycle          BillingCycle        @default(MONTHLY)
+
+  requiresPreAuthorization Boolean           @default(false)
+  allowsOutpatientBilling  Boolean           @default(true)
+  allowsInpatientBilling   Boolean           @default(true)
+  allowsPharmacyBilling    Boolean           @default(true)
+  allowsLabBilling         Boolean           @default(true)
+  allowsRadiologyBilling   Boolean           @default(true)
+
+  accountManagerId      String?
+  claimsOfficerId       String?
+
+  notes                 String?
+
+  activatedAt           DateTime?
+  activatedById         String?
+
+  heldAt                DateTime?
+  heldById              String?
+  holdReason            String?
+
+  suspendedAt           DateTime?
+  suspendedById         String?
+  suspensionReason      String?
+
+  closedAt              DateTime?
+  closedById            String?
+  closureReason         String?
+
+  createdById           String?
+  updatedById           String?
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  contacts              DebtorContact[]
+  contracts             DebtorContract[]
+  statements            DebtorStatement[]
+  reconciliations       DebtorReconciliation[]
+  documents             DebtorDocument[]
+  auditLogs             DebtorAuditLog[]
+  schemes               DebtorScheme[]
+  // Legacy scheme operations (to be deprecated/migrated)
+  departmentRules       SchemeDepartmentRule[]
+  outpatientLimits      SchemeOutpatientLimit[]
+  visitLimits           SchemeVisitLimit[]
+  copaymentRules        SchemeCopaymentRule[]
+
+  @@index([debtorName])
+  @@index([debtorCode])
+  @@index([debtorType])
+  @@index([status])
+  @@index([tenantId])
+  @@index([branchId])
+}
+
+model DebtorContact {
+  id              String            @id @default(uuid())
+
+  debtorAccountId String
+
+  contactType     DebtorContactType @default(GENERAL)
+
+  fullName        String
+  jobTitle        String?
+
+  phone           String?
+  email           String?
+
+  isPrimary       Boolean           @default(false)
+  isActive        Boolean           @default(true)
+
+  notes           String?
+
+  createdById     String?
+  updatedById     String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  debtorAccount   DebtorAccount     @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([contactType])
+  @@index([isActive])
+}
+
+model DebtorContract {
+  id                      String        @id @default(uuid())
+
+  debtorAccountId          String
+
+  contractNumber           String?
+  contractName             String
+
+  startDate                DateTime
+  endDate                  DateTime?
+
+  billingCycle             BillingCycle @default(MONTHLY)
+  paymentTermsDays         Int          @default(30)
+
+  creditLimit              Decimal?     @db.Decimal(14,2)
+
+  requiresPreAuthorization Boolean      @default(false)
+
+  outpatientAllowed        Boolean      @default(true)
+  inpatientAllowed         Boolean      @default(true)
+  pharmacyAllowed          Boolean      @default(true)
+  laboratoryAllowed        Boolean      @default(true)
+  radiologyAllowed         Boolean      @default(true)
+
+  isActive                 Boolean      @default(true)
+
+  notes                    String?
+
+  createdById              String?
+  updatedById              String?
+
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  debtorAccount            DebtorAccount @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model DebtorStatement {
+  id                  String          @id @default(uuid())
+
+  statementNumber     String          @unique
+
+  debtorAccountId     String
+
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  openingBalance      Decimal         @default(0) @db.Decimal(14,2)
+  invoiceTotal        Decimal         @default(0) @db.Decimal(14,2)
+  paymentTotal        Decimal         @default(0) @db.Decimal(14,2)
+  adjustmentTotal     Decimal         @default(0) @db.Decimal(14,2)
+  closingBalance      Decimal         @default(0) @db.Decimal(14,2)
+
+  status              StatementStatus @default(GENERATED)
+
+  generatedById       String?
+  generatedAt         DateTime        @default(now())
+
+  sentById            String?
+  sentAt              DateTime?
+
+  acknowledgedAt      DateTime?
+  disputedAt          DateTime?
+  disputeReason       String?
+
+  fileUrl             String?
+
+  debtorAccount       DebtorAccount   @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@index([status])
+}
+
+model DebtorReconciliation {
+  id                    String                @id @default(uuid())
+
+  reconciliationNumber  String                @unique
+
+  debtorAccountId       String
+
+  statementId           String?
+
+  paymentReference      String?
+  remittanceReference   String?
+
+  remittanceAmount      Decimal?              @db.Decimal(14,2)
+  matchedAmount         Decimal               @default(0) @db.Decimal(14,2)
+  unmatchedAmount       Decimal               @default(0) @db.Decimal(14,2)
+
+  status                ReconciliationStatus  @default(OPEN)
+
+  notes                 String?
+
+  startedById           String?
+  startedAt             DateTime              @default(now())
+
+  closedById            String?
+  closedAt              DateTime?
+
+  debtorAccount         DebtorAccount         @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([status])
+}
+
+model DebtorDocument {
+  id              String             @id @default(uuid())
+
+  debtorAccountId String
+
+  documentType    DebtorDocumentType
+
+  fileName        String
+  fileUrl         String
+  mimeType        String?
+  fileSize        Int?
+
+  notes           String?
+
+  uploadedById    String?
+  uploadedAt      DateTime           @default(now())
+
+  debtorAccount   DebtorAccount      @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([documentType])
+}
+
+model DebtorAuditLog {
+  id              String            @id @default(uuid())
+
+  debtorAccountId String?
+
+  actorId         String?
+
+  action          DebtorAuditAction
+
+  entityType      String
+  entityId        String
+
+  previousValues  Json?
+  newValues       Json?
+
+  reason          String?
+
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt       DateTime          @default(now())
+
+  debtorAccount   DebtorAccount?    @relation(fields: [debtorAccountId], references: [id])
+
+  @@index([debtorAccountId])
+  @@index([actorId])
+  @@index([action])
+}
+
+// ============================================================================
+// DEBTOR SCHEME MANAGEMENT SYSTEM - NEW MODELS
+// ============================================================================
+
+model DebtorScheme {
+  id                      String              @id @default(uuid())
+  tenantId                String              @db.Uuid
+  branchId                String?             @db.Uuid
+  debtorAccountId         String
+  
+  schemeCode              String
+  schemeName              String
+  schemeType              SchemeType          @default(COMPREHENSIVE)
+  status                  DebtorSchemeStatus  @default(DRAFT)
+  description             String?
+  startDate               DateTime?
+  endDate                 DateTime?
+  creditLimit             Decimal?            @db.Decimal(14,2)
+  currentBalance          Decimal             @default(0) @db.Decimal(14,2)
+  availableCredit         Decimal?            @db.Decimal(14,2)
+  paymentTermsDays        Int?
+  billingCycle            String?
+  requiresPreAuthorization Boolean            @default(false)
+  allowsOutpatientBilling Boolean             @default(true)
+  allowsInpatientBilling  Boolean             @default(true)
+  allowsPharmacyBilling   Boolean             @default(true)
+  allowsLabBilling        Boolean             @default(true)
+  allowsRadiologyBilling  Boolean             @default(true)
+  notes                   String?
+  createdById             String?
+  updatedById             String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  tenant                  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                  Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorAccount           DebtorAccount       @relation(fields: [debtorAccountId], references: [id], onDelete: Cascade)
+  departmentRules         SchemeDepartmentRule[]
+  servicePointRules       SchemeServicePointRule[]
+  outpatientLimits        SchemeOutpatientLimit[]
+  visitLimits             SchemeVisitLimit[]
+  copaymentCategories     SchemeCopaymentCategory[]
+  copaymentRules          SchemeCopaymentRule[]
+  authorizationRules      SchemeAuthorizationRule[]
+  auditLogs               SchemeAuditLog[]
+
+  @@unique([debtorAccountId, schemeCode])
+  @@index([debtorAccountId])
+  @@index([schemeName])
+  @@index([schemeType])
+  @@index([status])
+  @@index([tenantId])
+  @@index([branchId])
+}
+
+model SchemeDepartmentRule {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  departmentId          String
+  isAllowed             Boolean             @default(true)
+  requiresAuthorization Boolean             @default(false)
+  allowsCashTopup       Boolean             @default(true)
+  overLimitAction       OverLimitAction     @default(ALLOW_CASH_TOPUP)
+  notes                 String?
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@unique([debtorSchemeId, departmentId])
+  @@index([debtorSchemeId])
+  @@index([departmentId])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeServicePointRule {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  departmentId          String?
+  servicePointId        String?
+  serviceCategory       SchemeServiceCategory
+  isAllowed             Boolean             @default(true)
+  requiresAuthorization Boolean             @default(false)
+  allowsCashTopup       Boolean             @default(true)
+  overLimitAction       OverLimitAction     @default(ALLOW_CASH_TOPUP)
+  notes                 String?
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@index([debtorSchemeId])
+  @@index([departmentId])
+  @@index([servicePointId])
+  @@index([serviceCategory])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeOutpatientLimit {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  departmentId          String?
+  servicePointId        String?
+  serviceCategory       SchemeServiceCategory?
+  limitType             LimitType
+  limitAmount           Decimal             @db.Decimal(14,2)
+  overLimitAction       OverLimitAction     @default(ALLOW_CASH_TOPUP)
+  requiresAuthorization Boolean             @default(false)
+  allowsCashTopup       Boolean             @default(true)
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@index([debtorSchemeId])
+  @@index([departmentId])
+  @@index([servicePointId])
+  @@index([serviceCategory])
+  @@index([limitType])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeVisitLimit {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  departmentId          String?
+  visitType             String?
+  visitLimitAmount      Decimal             @db.Decimal(14,2)
+  overLimitAction       OverLimitAction     @default(ALLOW_CASH_TOPUP)
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@index([debtorSchemeId])
+  @@index([departmentId])
+  @@index([visitType])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeCopaymentCategory {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  code                  String
+  name                  String
+  serviceCategory       SchemeServiceCategory
+  description           String?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+  copaymentRules        SchemeCopaymentRule[]
+
+  @@unique([debtorSchemeId, code])
+  @@index([debtorSchemeId])
+  @@index([serviceCategory])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeCopaymentRule {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  copaymentCategoryId   String?
+  departmentId          String?
+  servicePointId        String?
+  serviceCategory       SchemeServiceCategory?
+  copaymentType         CopaymentType
+  percentageValue       Decimal?            @db.Decimal(5,2)
+  fixedAmount           Decimal?            @db.Decimal(14,2)
+  minimumAmount         Decimal?            @db.Decimal(14,2)
+  maximumAmount         Decimal?            @db.Decimal(14,2)
+  appliesToConsultation Boolean             @default(false)
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+  copaymentCategory     SchemeCopaymentCategory? @relation(fields: [copaymentCategoryId], references: [id], onDelete: SetNull)
+
+  @@index([debtorSchemeId])
+  @@index([copaymentCategoryId])
+  @@index([departmentId])
+  @@index([servicePointId])
+  @@index([serviceCategory])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeAuthorizationRule {
+  id                    String              @id @default(uuid())
+  tenantId              String              @db.Uuid
+  branchId              String?             @db.Uuid
+  debtorSchemeId        String
+  departmentId          String?
+  servicePointId        String?
+  serviceCategory       SchemeServiceCategory?
+  requiresAuthorization Boolean             @default(true)
+  thresholdAmount       Decimal?            @db.Decimal(14,2)
+  notes                 String?
+  effectiveFrom         DateTime?
+  effectiveTo           DateTime?
+  isActive              Boolean             @default(true)
+  createdById           String?
+  updatedById           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenant                Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch                Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  debtorScheme          DebtorScheme        @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@index([debtorSchemeId])
+  @@index([departmentId])
+  @@index([servicePointId])
+  @@index([serviceCategory])
+  @@index([isActive])
+  @@index([tenantId])
+}
+
+model SchemeAuditLog {
+  id              String            @id @default(uuid())
+  tenantId        String            @db.Uuid
+  debtorSchemeId  String?
+  actorId         String?
+  action          SchemeAuditAction
+  entityType      String
+  entityId        String
+  previousValues  Json?
+  newValues       Json?
+  reason          String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime          @default(now())
+
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  debtorScheme    DebtorScheme?     @relation(fields: [debtorSchemeId], references: [id], onDelete: Cascade)
+
+  @@index([debtorSchemeId])
+  @@index([actorId])
+  @@index([action])
+  @@index([tenantId])
+}
