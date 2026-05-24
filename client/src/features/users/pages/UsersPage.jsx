@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, MoreVertical, Eye, Edit, Lock, Unlock, UserX } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionCard } from "@/components/layout/SectionCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Select } from "@/components/ui/Select";
+import { Label } from "@/components/ui/Label";
 import { useUsers, useDeactivateUser, useActivateUser } from "../hooks/useUsers";
 import CreateUserForm from "../components/CreateUserForm";
 
@@ -58,28 +60,24 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
-          <p className="text-slate-500 mt-1">Manage hospital staff accounts and permissions</p>
-        </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
-      </div>
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="User Management"
+        description="Manage hospital staff accounts and permissions"
+        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Users' }]}
+        action={
+          <Button onClick={() => setShowCreateForm(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>
-            View and manage all user accounts in the system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex gap-4">
-            <div className="flex-1">
+      <SectionCard>
+        <div className="space-y-4">
+          <div className="flex gap-4 flex-wrap">
+            <div className="flex-1 min-w-64">
+              <Label>Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
@@ -90,30 +88,26 @@ const UsersPage = () => {
                 />
               </div>
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="CASHIER_SUPERVISOR">Supervisor</SelectItem>
-                <SelectItem value="CASHIER">Cashier</SelectItem>
-                <SelectItem value="FINANCE_MANAGER">Finance Manager</SelectItem>
-                <SelectItem value="AUDITOR">Auditor</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-44">
+              <Label>Role</Label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <option value="all">All Roles</option>
+                <option value="SUPER_ADMIN">Super Admin</option>
+                <option value="ADMIN">Admin</option>
+                <option value="CASHIER_SUPERVISOR">Supervisor</option>
+                <option value="CASHIER">Cashier</option>
+                <option value="FINANCE_MANAGER">Finance Manager</option>
+                <option value="AUDITOR">Auditor</option>
+              </Select>
+            </div>
+            <div className="w-40">
+              <Label>Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
+            </div>
           </div>
 
           {isLoading ? (
@@ -142,11 +136,11 @@ const UsersPage = () => {
                     </TableRow>
                   ) : (
                     paginatedUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">
+                      <TableRow key={user.id} className="hover:bg-cyan-50/30">
+                        <TableCell className="font-medium text-slate-900">
                           {user.firstName} {user.lastName}
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
+                        <TableCell className="text-slate-700">{user.email}</TableCell>
                         <TableCell>
                           <Badge variant={ROLE_BADGES[user.role]?.variant || "outline"}>
                             {ROLE_BADGES[user.role]?.label || user.role}
@@ -157,7 +151,7 @@ const UsersPage = () => {
                             {user.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-slate-700">
                           {user.lastLoginAt 
                             ? new Date(user.lastLoginAt).toLocaleDateString()
                             : "Never"
@@ -225,8 +219,8 @@ const UsersPage = () => {
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
       <CreateUserForm open={showCreateForm} onOpenChange={setShowCreateForm} />
     </div>

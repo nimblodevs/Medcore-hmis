@@ -6,12 +6,15 @@ import {
   Building2, ChevronRight,
   Activity, ThermometerSnowflake
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatsGrid, StatsCard } from '@/components/layout/StatsCard';
+import { SectionCard, SectionGrid } from '@/components/layout/SectionCard';
 
 /**
  * Pharmacy Dashboard Component
  * 
  * Displays key metrics and alerts for pharmacy operations
- * Following MedCore HMIS theme: rounded-3xl, shadow-sm, clean typography
+ * Following MedCore HMIS theme: rounded-2xl, slate/cyan palette, clean typography
  */
 const PharmacyDashboard = () => {
   // Fetch low stock drugs
@@ -69,113 +72,65 @@ const PharmacyDashboard = () => {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="p-6 space-y-6"
+      className="space-y-6"
     >
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Pharmacy Dashboard</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Real-time inventory & dispensing overview</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Pharmacy Dashboard"
+        subtitle="Real-time inventory & dispensing overview"
+        breadcrumbs={[{ label: 'Pharmacy', href: '/pharmacy' }, { label: 'Dashboard' }]}
+      />
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Drugs */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700">
-              <Package size={17} />
-            </div>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-              Inventory
-            </span>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Drugs</p>
-            <p className="text-xl font-black leading-tight text-slate-900">{totalDrugs}</p>
-            <p className="text-[10px] text-slate-400 mt-1">Across all stores</p>
-          </div>
-        </div>
-
-        {/* Low Stock Alerts */}
-        <div className={`rounded-3xl border ${lowStockCount > 0 ? 'border-red-200 ring-1 ring-red-100' : 'border-slate-200'} bg-white p-5 shadow-sm flex flex-col gap-3`}>
-          <div className="flex items-center justify-between">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700">
-              <AlertTriangle size={17} />
-            </div>
-            {lowStockCount > 0 && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-red-600">
-                Action Needed
-              </span>
-            )}
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Low Stock Alerts</p>
-            <p className={`text-xl font-black leading-tight ${lowStockCount > 0 ? 'text-red-700' : 'text-slate-900'}`}>
-              {lowStockCount}
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">Drugs below minimum level</p>
-          </div>
-        </div>
-
-        {/* Expiring Soon */}
-        <div className={`rounded-3xl border ${expiringCount > 0 ? 'border-orange-200 ring-1 ring-orange-100' : 'border-slate-200'} bg-white p-5 shadow-sm flex flex-col gap-3`}>
-          <div className="flex items-center justify-between">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
-              <Clock size={17} />
-            </div>
-            {expiringCount > 0 && (
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-orange-600">
-                Review Soon
-              </span>
-            )}
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Expiring Soon</p>
-            <p className={`text-xl font-black leading-tight ${expiringCount > 0 ? 'text-orange-700' : 'text-slate-900'}`}>
-              {expiringCount}
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">Next 30 days</p>
-          </div>
-        </div>
-
-        {/* Active Stores */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-              <Building2 size={17} />
-            </div>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-              Locations
-            </span>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Active Stores</p>
-            <p className="text-xl font-black leading-tight text-slate-900">{totalStores}</p>
-            <p className="text-[10px] text-slate-400 mt-1">Pharmacy locations</p>
-          </div>
-        </div>
-      </div>
+      <StatsGrid columns="quad">
+        <StatsCard
+          icon={Package}
+          iconColor="cyan"
+          title="Total Drugs"
+          value={totalDrugs.toString()}
+          note="Across all stores"
+          badge={{ label: 'Inventory', variant: 'slate' }}
+        />
+        <StatsCard
+          icon={AlertTriangle}
+          iconColor="rose"
+          title="Low Stock Alerts"
+          value={lowStockCount.toString()}
+          note="Drugs below minimum level"
+          badge={lowStockCount > 0 ? { label: 'Action Needed', variant: 'rose' } : undefined}
+          valueColor={lowStockCount > 0 ? 'rose' : undefined}
+        />
+        <StatsCard
+          icon={Clock}
+          iconColor="amber"
+          title="Expiring Soon"
+          value={expiringCount.toString()}
+          note="Next 30 days"
+          badge={expiringCount > 0 ? { label: 'Review Soon', variant: 'amber' } : undefined}
+          valueColor={expiringCount > 0 ? 'amber' : undefined}
+        />
+        <StatsCard
+          icon={Building2}
+          iconColor="blue"
+          title="Active Stores"
+          value={totalStores.toString()}
+          note="Pharmacy locations"
+          badge={{ label: 'Locations', variant: 'slate' }}
+        />
+      </StatsGrid>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <SectionGrid columns="dual">
         {/* Low Stock Alerts Table */}
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-5 pt-5 pb-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={14} className="text-slate-400" />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-500">Low Stock Alerts</h2>
-              </div>
-              {lowStockCount > 0 && (
-                <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-cyan-600 hover:bg-cyan-50 transition-colors">
-                  View All <ChevronRight size={10} />
-                </button>
-              )}
-            </div>
-          </div>
-          
+        <SectionCard
+          title="Low Stock Alerts"
+          icon={AlertTriangle}
+          headerAction={lowStockCount > 0 ? (
+            <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-cyan-600 hover:bg-cyan-50 transition-colors">
+              View All <ChevronRight size={10} />
+            </button>
+          ) : null}
+        >
           {lowStockCount === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-400">
               <Package size={28} className="mb-2 opacity-20" />
@@ -195,7 +150,7 @@ const PharmacyDashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {lowStockItems.slice(0, 5).map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={item.id} className="hover:bg-cyan-50/30 transition-colors">
                       <td className="px-4 py-3">
                         <p className="text-xs font-semibold text-slate-900 leading-tight">
                           {item.drug?.name || 'Unknown'}
@@ -205,7 +160,7 @@ const PharmacyDashboard = () => {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-black text-red-700">{item.currentStock}</span>
+                        <span className="text-xs font-black text-rose-700">{item.currentStock}</span>
                         <span className="text-[9px] text-slate-400 ml-1">{item.unit || 'units'}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-600">{item.minimumStockLevel}</td>
@@ -220,24 +175,18 @@ const PharmacyDashboard = () => {
               </table>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         {/* Expiring Soon Table */}
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-5 pt-5 pb-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <ThermometerSnowflake size={14} className="text-slate-400" />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-500">Expiring Soon</h2>
-              </div>
-              {expiringCount > 0 && (
-                <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-cyan-600 hover:bg-cyan-50 transition-colors">
-                  View All <ChevronRight size={10} />
-                </button>
-              )}
-            </div>
-          </div>
-          
+        <SectionCard
+          title="Expiring Soon"
+          icon={ThermometerSnowflake}
+          headerAction={expiringCount > 0 ? (
+            <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-cyan-600 hover:bg-cyan-50 transition-colors">
+              View All <ChevronRight size={10} />
+            </button>
+          ) : null}
+        >
           {expiringCount === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-slate-400">
               <Activity size={28} className="mb-2 opacity-20" />
@@ -257,7 +206,7 @@ const PharmacyDashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {expiringBatches.slice(0, 5).map((batch) => (
-                    <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={batch.id} className="hover:bg-cyan-50/30 transition-colors">
                       <td className="px-4 py-3">
                         <p className="text-xs font-semibold text-slate-900 leading-tight">
                           {batch.drug?.name || 'Unknown'}
@@ -272,7 +221,7 @@ const PharmacyDashboard = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-black text-orange-700">
+                        <span className="text-xs font-black text-amber-700">
                           {fmtDate(batch.expiryDate)}
                         </span>
                       </td>
@@ -287,8 +236,8 @@ const PharmacyDashboard = () => {
               </table>
             </div>
           )}
-        </div>
-      </div>
+        </SectionCard>
+      </SectionGrid>
     </motion.div>
   );
 };
