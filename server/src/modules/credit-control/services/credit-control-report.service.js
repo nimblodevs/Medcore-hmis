@@ -205,3 +205,60 @@ export async function getWriteOffsReport(tenantId, branchId) {
     totalPostedAmount: 0,
   };
 }
+ * Get overdue accounts report
+ * @param {string} tenantId - Tenant ID
+ * @param {string} branchId - Branch ID
+ * @param {Object} options - Report options
+ * @param {string} [options.agingBucket] - Filter by aging bucket
+ * @param {string} [options.riskLevel] - Filter by risk level
+ * @param {number} [options.limit] - Limit results
+ * @returns {Promise<Object>} Overdue accounts report data
+ */
+export async function getOverdueAccountsReport(tenantId, branchId, options = {}) {
+  const { agingBucket, riskLevel, limit } = options;
+
+  const filters = {
+    tenantId,
+    branchId,
+    status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
+  };
+
+  if (agingBucket) {
+    filters.agingBucket = agingBucket;
+  }
+
+  if (riskLevel) {
+    filters.riskLevel = riskLevel;
+  }
+
+  const cases = await caseRepository.findByFilters({
+    ...filters,
+    page: 1,
+    limit: limit || 100,
+  });
+
+  const totalOutstanding = cases.cases.reduce((sum, c) => sum + parseFloat(c.outstandingAmount), 0);
+  const totalOverdue = cases.cases.reduce((sum, c) => sum + parseFloat(c.overdueAmount), 0);
+
+  return {
+    accounts: cases.cases.map(c => ({
+      caseNumber: c.caseNumber,
+      creditAccountId: c.creditAccountId,
+      outstandingAmount: c.outstandingAmount,
+      overdueAmount: c.overdueAmount,
+      daysOverdue: c.daysOverdue,
+      agingBucket: c.agingBucket,
+      riskLevel: c.riskLevel,
+      status: c.status,
+      assignedCollectorId: c.assignedCollectorId,
+      nextFollowUpAt: c.nextFollowUpAt,
+    })),
+    summary: {
+      totalAccounts: cases.total,
+      totalOutstanding,
+      totalOverdue,
+      byAgingBucket: {},
+      byRiskLevel: {},
+    },
+  };
+}

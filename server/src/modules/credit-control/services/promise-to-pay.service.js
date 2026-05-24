@@ -32,7 +32,87 @@ export async function createPromise({
     createdById: createdById || null,
   };
 
-  return promiseRepository.create(promiseData);
+  const newPromise = await promiseRepository.create(promiseData);
+
+  // Log audit
+  if (createdById) {
+    await logPromiseCreated({
+      tenantId,
+      branchId,
+      caseId,
+      creditAccountId: null,
+      actorId: createdById,
+      promiseId: newPromise.id,
+      newValues: {
+        promisedAmount,
+        promisedDate,
+        notes,
+      },
+    });
+  }
+
+  return newPromise;
+}
+
+/**
+ * Update a promise to pay
+ * @param {Object} params - Update parameters
+ * @param {string} params.promiseId - Promise ID
+ * @param {string} params.tenantId - Tenant ID
+ * @param {string} params.branchId - Branch ID
+ * @param {Object} params.updateData - Data to update
+ * @param {string} [params.updatedById] - User ID updating the promise
+ * @param {string} [params.reason] - Reason for update
+ * @returns {Promise<Object>} Updated promise
+ */
+export async function updatePromise({
+  promiseId,
+  tenantId,
+  branchId,
+  updateData,
+  updatedById,
+  reason,
+}) {
+  const existingPromise = await promiseRepository.findById(promiseId);
+  if (!existingPromise) {
+    throw new Error("Promise to pay not found");
+  }
+
+  // Verify tenant/branch
+  if (existingPromise.tenantId !== tenantId || existingPromise.branchId !== branchId) {
+    throw new Error("Unauthorized access to promise");
+  }
+
+  // Prepare previous values for audit
+  const previousValues = {};
+  if (updateData.promisedAmount !== undefined) {
+    previousValues.promisedAmount = existingPromise.promisedAmount;
+  }
+  if (updateData.promisedDate !== undefined) {
+    previousValues.promisedDate = existingPromise.promisedDate;
+  }
+  if (updateData.notes !== undefined) {
+    previousValues.notes = existingPromise.notes;
+  }
+
+  const updatedPromise = await promiseRepository.update(promiseId, updateData);
+
+  // Log audit
+  if (updatedById && Object.keys(previousValues).length > 0) {
+    await logPromiseUpdated({
+      tenantId,
+      branchId,
+      caseId: existingPromise.caseId,
+      creditAccountId: null,
+      actorId: updatedById,
+      promiseId,
+      previousValues,
+      newValues: updateData,
+      reason,
+    });
+  }
+
+  return updatedPromise;
 }
 
 /**
@@ -57,6 +137,11 @@ export async function markPromiseFulfilled({
     throw new Error("Promise to pay not found");
   }
 
+  // Verify tenant/branch
+  if (existingPromise.tenantId !== tenantId || existingPromise.branchId !== branchId) {
+    throw new Error("Unauthorized access to promise");
+  }
+
   // Prepare previous values for audit
   const previousValues = {
     isFulfilled: existingPromise.isFulfilled,
@@ -67,20 +152,22 @@ export async function markPromiseFulfilled({
   const updatedPromise = await promiseRepository.markFulfilled(promiseId, fulfilledAmount);
 
   // Log audit
-  await logPromiseUpdated({
-    tenantId,
-    branchId,
-    caseId: existingPromise.caseId,
-    creditAccountId: null,
-    actorId: updatedById,
-    promiseId,
-    previousValues,
-    newValues: {
-      isFulfilled: true,
-      fulfilledAt: new Date().toISOString(),
-      fulfilledAmount,
-    },
-  });
+  if (updatedById) {
+    await logPromiseUpdated({
+      tenantId,
+      branchId,
+      caseId: existingPromise.caseId,
+      creditAccountId: null,
+      actorId: updatedById,
+      promiseId,
+      previousValues,
+      newValues: {
+        isFulfilled: true,
+        fulfilledAt: new Date().toISOString(),
+        fulfilledAmount,
+      },
+    });
+  }
 
   return updatedPromise;
 }
