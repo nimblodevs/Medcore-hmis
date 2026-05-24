@@ -16,6 +16,7 @@ import cashRoutes from "./cash.routes.js";
 import emrRoutes from "./emr.routes.js";
 import appointmentRoutes from "../modules/appointments/routes/appointments.routes.js";
 import creditControlRoutes from "../modules/credit-control/routes/index.js";
+import debtorRoutes from "../modules/debtors/routes/index.js";
 import authenticateUser from "../middlewares/authenticateUser.js";
 import tenantScope from "../middlewares/tenantScope.js";
 import branchScope from "../middlewares/branchScope.js";
@@ -41,5 +42,6 @@ router.use("/cash", cashRoutes);
 router.use("/emr", emrRoutes);
 router.use("/appointments", appointmentRoutes);
 router.use("/credit-control", creditControlRoutes);
+router.use("/debtors", debtorRoutes);
 
 export default router;
