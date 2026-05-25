@@ -1,13 +1,7 @@
 import { Router } from "express";
 import { debtorSchemeController } from "../controllers/debtor-scheme.controller.js";
-import { authMiddleware } from "../../../middleware/auth.middleware.js";
-import { scopeMiddleware } from "../../../middleware/scope.middleware.js";
 
 const router = Router();
-
-// All routes require authentication and tenant/branch scope
-router.use(authMiddleware);
-router.use(scopeMiddleware);
 
 /**
  * @route   GET /api/debtor-schemes

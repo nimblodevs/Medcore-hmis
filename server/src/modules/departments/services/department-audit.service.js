@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import prisma from "../../../config/prisma.js";
 
 export const departmentAuditService = {
   async logAction(departmentId, actorId, action, entityType, entityId, previousValues = null, newValues = null, reason = null) {

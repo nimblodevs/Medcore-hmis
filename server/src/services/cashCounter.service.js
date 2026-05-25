@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { ApiError } from "../utils/apiError.js";
+import ApiError from "../utils/apiError.js";
 import { AuditService } from "./audit.service.js";
 
 const prisma = new PrismaClient();

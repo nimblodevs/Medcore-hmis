@@ -1,4 +1,4 @@
-import { prisma } from "../../../utils/prisma.js";
+import prisma from "../../../config/prisma.js";
 
 export class SchemeAuditService {
   async logAction({ debtorSchemeId, tenantId, actorId, action, entityType, entityId, previousValues, newValues, reason, ipAddress, userAgent }) {

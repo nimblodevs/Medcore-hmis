@@ -1,8 +1,39 @@
-import { InvoiceStatus, BillingType, ApprovalAction, ClaimStatus } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
 import { round2, toNumber } from "../utils/money.js";
 import { claimNo, invoiceNo } from "../utils/numbering.js";
+
+const InvoiceStatus = {
+  DRAFT: "DRAFT",
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  SUBMITTED_TO_PAYER: "SUBMITTED_TO_PAYER",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  FULLY_PAID: "FULLY_PAID",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+  REVERSED: "REVERSED"
+};
+
+const BillingType = {
+  CASH: "CASH",
+  CREDIT: "CREDIT",
+  INSURANCE: "INSURANCE"
+};
+
+const ApprovalAction = {
+  SUBMITTED: "SUBMITTED",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+  REVERSED: "REVERSED",
+  SUBMITTED_TO_PAYER: "SUBMITTED_TO_PAYER",
+  CLAIM_GENERATED: "CLAIM_GENERATED"
+};
+
+const ClaimStatus = {
+  DRAFT: "DRAFT"
+};
 
 const ACTIVE_CREDIT_STATUSES = [
   InvoiceStatus.PENDING_APPROVAL,

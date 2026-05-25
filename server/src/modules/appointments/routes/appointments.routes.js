@@ -80,6 +80,23 @@ router.post("/", async (req, res, next) => {
 });
 
 /**
+ * GET /api/appointments/today/summary
+ * Get today's appointment summary
+ */
+router.get("/today/summary", async (_req, res, next) => {
+  try {
+    const summary = await appointmentService.getTodaySummary();
+
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /api/appointments/:id
  * Get appointment details
  */
@@ -201,19 +218,67 @@ router.post("/:id/cancel", async (req, res, next) => {
   }
 });
 
-/**
- * GET /api/appointments/today/summary
- * Get today's appointment summary
- */
-router.get("/today/summary", async (req, res, next) => {
+router.post("/:id/reschedule", async (req, res, next) => {
   try {
-    const summary = await appointmentService.getTodaySummary();
+    const validatedData = rescheduleAppointmentSchema.parse(req.body);
+    const appointment = await appointmentService.rescheduleAppointment(
+      req.params.id,
+      validatedData,
+      getActorId(req),
+      req
+    );
+
+    res.json({ success: true, message: "Appointment rescheduled successfully", data: appointment });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ success: false, message: "Validation error", errors: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.post("/:id/check-in", async (req, res, next) => {
+  try {
+    const validatedData = checkInAppointmentSchema.parse(req.body);
+    const appointment = await appointmentService.checkInAppointment(req.params.id, getActorId(req), req, validatedData.notes);
+
+    res.json({ success: true, message: "Appointment checked in successfully", data: appointment });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ success: false, message: "Validation error", errors: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.post("/:id/no-show", async (req, res, next) => {
+  try {
+    const validatedData = noShowAppointmentSchema.parse(req.body);
+    const appointment = await appointmentService.markNoShow(req.params.id, getActorId(req), req, validatedData.reason);
+
+    res.json({ success: true, message: "Appointment marked as no-show", data: appointment });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ success: false, message: "Validation error", errors: error.errors });
+    }
+    next(error);
+  }
+});
+
+router.post("/:id/complete", async (req, res, next) => {
+  try {
+    const validatedData = completeAppointmentSchema.parse(req.body);
+    const appointment = await appointmentService.completeAppointment(req.params.id, getActorId(req), req, validatedData.notes);
 
     res.json({
       success: true,
-      data: summary
+      message: "Appointment completed successfully",
+      data: appointment
     });
   } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ success: false, message: "Validation error", errors: error.errors });
+    }
     next(error);
   }
 });

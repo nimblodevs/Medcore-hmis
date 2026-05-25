@@ -59,6 +59,7 @@ const authenticateUser = async (req, _res, next) => {
       isSuperAdmin: user.isSuperAdmin
     };
     req.auth.permissions = [...permissions];
+    req.userId = user.id;
 
     next();
   } catch (error) {

@@ -205,6 +205,8 @@ export async function getWriteOffsReport(tenantId, branchId) {
     totalPostedAmount: 0,
   };
 }
+
+/**
  * Get overdue accounts report
  * @param {string} tenantId - Tenant ID
  * @param {string} branchId - Branch ID

@@ -1,7 +1,7 @@
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import HMS from "./pages/HMS";
+import HMS from "./hims/pages/HMS";
 
 const queryClient = new QueryClient();
 

@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import prisma from "../../../config/prisma.js";
 import { appointmentNumberService } from "./appointment-number.service.js";
 import { appointmentAuditService } from "./appointment-audit.service.js";
 
@@ -382,6 +382,126 @@ export const appointmentService = {
     });
 
     return updated;
+  },
+
+  async rescheduleAppointment(id, data, actorId, req) {
+    const appointment = await this.getAppointment(id);
+
+    if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(appointment.status)) {
+      throw new Error(`Cannot reschedule ${appointment.status} appointment`);
+    }
+
+    if (data.scheduledEndAt <= data.scheduledStartAt) {
+      throw new Error("Appointment end time must be after start time");
+    }
+
+    if (appointment.doctorId) {
+      const hasDoctorOverlap = await this.checkDoctorOverlap(
+        appointment.doctorId,
+        data.scheduledStartAt,
+        data.scheduledEndAt,
+        id
+      );
+      if (hasDoctorOverlap) throw new Error("Doctor already has an appointment during this time");
+    }
+
+    const hasPatientOverlap = await this.checkPatientOverlap(
+      appointment.patientId,
+      data.scheduledStartAt,
+      data.scheduledEndAt,
+      id
+    );
+    if (hasPatientOverlap) throw new Error("Patient already has an appointment during this time");
+
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: {
+        scheduledStartAt: data.scheduledStartAt,
+        scheduledEndAt: data.scheduledEndAt,
+        status: "RESCHEDULED",
+        rescheduledAt: new Date(),
+        rescheduledById: actorId,
+        rescheduleReason: data.rescheduleReason,
+        updatedById: actorId
+      },
+      include: {
+        patient: {
+          select: { id: true, firstName: true, lastName: true, hospitalNumber: true }
+        }
+      }
+    });
+
+    await appointmentAuditService.logAction({
+      appointmentId: id,
+      actorId,
+      action: "APPOINTMENT_RESCHEDULED",
+      entityType: "Appointment",
+      entityId: id,
+      previousValues: {
+        scheduledStartAt: appointment.scheduledStartAt,
+        scheduledEndAt: appointment.scheduledEndAt
+      },
+      newValues: data,
+      reason: data.rescheduleReason,
+      ipAddress: req?.ip,
+      userAgent: req?.get("user-agent")
+    });
+
+    return updated;
+  },
+
+  async checkInAppointment(id, actorId, req, notes = null) {
+    const appointment = await this.getAppointment(id);
+    if (!["BOOKED", "CONFIRMED"].includes(appointment.status)) {
+      throw new Error(`Cannot check in ${appointment.status} appointment`);
+    }
+
+    return prisma.appointment.update({
+      where: { id },
+      data: {
+        status: "CHECKED_IN",
+        checkedInAt: new Date(),
+        checkedInById: actorId,
+        notes: notes || appointment.notes
+      },
+      include: { patient: { select: { id: true, firstName: true, lastName: true, hospitalNumber: true } } }
+    });
+  },
+
+  async markNoShow(id, actorId, req, reason = null) {
+    const appointment = await this.getAppointment(id);
+    if (["COMPLETED", "CANCELLED"].includes(appointment.status)) {
+      throw new Error(`Cannot mark ${appointment.status} appointment as no-show`);
+    }
+
+    return prisma.appointment.update({
+      where: { id },
+      data: {
+        status: "NO_SHOW",
+        noShowAt: new Date(),
+        noShowById: actorId,
+        notes: reason || appointment.notes
+      },
+      include: { patient: { select: { id: true, firstName: true, lastName: true, hospitalNumber: true } } }
+    });
+  },
+
+  async completeAppointment(id, actorId, req, notes = null) {
+    const appointment = await this.getAppointment(id);
+    if (!["CHECKED_IN", "CONFIRMED"].includes(appointment.status)) {
+      throw new Error(`Cannot complete ${appointment.status} appointment`);
+    }
+
+    return prisma.appointment.update({
+      where: { id },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        completedById: actorId,
+        notes: notes || appointment.notes
+      },
+      include: { patient: { select: { id: true, firstName: true, lastName: true, hospitalNumber: true } } }
+    });
   },
 
   /**

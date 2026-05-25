@@ -18,4 +18,5 @@ const validateRequest = (schema, source = "body") => (req, _res, next) => {
   return next();
 };
 
+export { validateRequest };
 export default validateRequest;

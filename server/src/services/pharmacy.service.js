@@ -1,16 +1,30 @@
-import { 
-  StockMovementType, 
-  PurchaseOrderStatus, 
-  BillingType,
-  PharmacySaleStatus,
-  PharmacyPaymentStatus,
-  PharmacyReturnStatus,
-  PayerType
-} from "@prisma/client";
 import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
 import { round2, toNumber } from "../utils/money.js";
 import { prescriptionNo as generatePrescriptionNo } from "../utils/numbering.js";
+
+const StockMovementType = {
+  PURCHASE_RECEIPT: "PURCHASE_RECEIPT",
+  SALE: "SALE",
+  DISPENSE: "DISPENSE",
+  RETURN: "RETURN",
+  ADJUSTMENT: "ADJUSTMENT"
+};
+
+const PurchaseOrderStatus = {
+  DRAFT: "DRAFT",
+  SUBMITTED: "SUBMITTED",
+  APPROVED: "APPROVED",
+  PARTIALLY_RECEIVED: "PARTIALLY_RECEIVED",
+  FULLY_RECEIVED: "FULLY_RECEIVED",
+  CANCELLED: "CANCELLED"
+};
+
+const BillingType = {
+  CASH: "CASH",
+  CREDIT: "CREDIT",
+  INSURANCE: "INSURANCE"
+};
 
 const assertTenantBranchAccess = (record, context) => {
   if (context.tenantId && record.tenantId !== context.tenantId) {

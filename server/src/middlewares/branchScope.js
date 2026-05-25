@@ -11,16 +11,22 @@ const branchScope = (req, _res, next) => {
 
   if (req.auth.isSuperAdmin) {
     req.context = { ...(req.context || {}), branchId: requestedBranchId || null };
+    req.branch = req.context.branchId ? { id: req.context.branchId } : null;
+    req.branchId = req.context.branchId;
     return next();
   }
 
   if (canAccessAllTenantBranches) {
     req.context = { ...(req.context || {}), branchId: requestedBranchId || null };
+    req.branch = req.context.branchId ? { id: req.context.branchId } : null;
+    req.branchId = req.context.branchId;
     return next();
   }
 
   if (!requestedBranchId) {
     req.context = { ...(req.context || {}), branchId: assignedBranchIds[0] || null };
+    req.branch = req.context.branchId ? { id: req.context.branchId } : null;
+    req.branchId = req.context.branchId;
     return next();
   }
 
@@ -29,6 +35,8 @@ const branchScope = (req, _res, next) => {
   }
 
   req.context = { ...(req.context || {}), branchId: requestedBranchId };
+  req.branch = req.context.branchId ? { id: req.context.branchId } : null;
+  req.branchId = req.context.branchId;
   return next();
 };
 

@@ -10,6 +10,8 @@ const tenantScope = (req, _res, next) => {
       ...(req.context || {}),
       tenantId: requestedTenantId || null
     };
+    req.tenant = req.context.tenantId ? { id: req.context.tenantId } : null;
+    req.tenantId = req.context.tenantId;
     return next();
   }
 
@@ -23,6 +25,8 @@ const tenantScope = (req, _res, next) => {
     ...(req.context || {}),
     tenantId: req.auth.tenantId
   };
+  req.tenant = { id: req.context.tenantId };
+  req.tenantId = req.context.tenantId;
 
   return next();
 };

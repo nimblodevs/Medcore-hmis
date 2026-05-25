@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import prisma from "../../../config/prisma.js";
 import { departmentAuditService } from "./department-audit.service.js";
 
 export const departmentAssignmentService = {

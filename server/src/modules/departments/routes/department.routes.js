@@ -11,7 +11,7 @@ import {
   assignManagerSchema,
   changeStatusSchema
 } from "../validators/department.validator.js";
-import { requireRole } from "../../middleware/auth.middleware.js";
+import requireRole from "../../../middlewares/requireRole.js";
 
 const router = Router();
 

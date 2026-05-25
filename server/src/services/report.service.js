@@ -1,6 +1,11 @@
-import { InvoiceStatus } from "@prisma/client";
 import prisma from "../config/prisma.js";
 import { toNumber } from "../utils/money.js";
+
+const InvoiceStatus = {
+  APPROVED: "APPROVED",
+  SUBMITTED_TO_PAYER: "SUBMITTED_TO_PAYER",
+  PARTIALLY_PAID: "PARTIALLY_PAID"
+};
 
 export const creditInvoicesReport = async (context) =>
   prisma.invoice.findMany({

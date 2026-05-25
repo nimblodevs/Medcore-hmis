@@ -24,3 +24,13 @@ export const logAudit = async ({
       userAgent
     }
   });
+
+export class AuditService {
+  async log({ entityType, performedBy, ...payload }) {
+    return logAudit({
+      ...payload,
+      entity: entityType || payload.entity,
+      userId: performedBy || payload.userId
+    });
+  }
+}
