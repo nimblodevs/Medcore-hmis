@@ -100,7 +100,7 @@ From the `server/` directory:
 npm install
 npm run prisma:generate
 npm run prisma:migrate
-npm run prisma:seed
+npm run prisma:migrate
 npm run dev
 ```
 

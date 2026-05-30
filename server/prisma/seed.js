@@ -38,7 +38,7 @@ const ROLE_LABELS = {
 };
 
 const getPasswordHash = async () =>
-  bcrypt.hash(process.env.SEED_SUPER_ADMIN_PASSWORD || "Admin@123", Number(process.env.BCRYPT_SALT_ROUNDS || 12));
+  bcrypt.hash(process.env.SEED_SUPER_ADMIN_PASSWORD || "password123", Number(process.env.BCRYPT_SALT_ROUNDS || 12));
 
 const upsertById = async (model, where, create, update = create) => {
   const existing = await model.findFirst({ where });
@@ -206,7 +206,7 @@ async function seedUsers({ tenant, mainBranch, departments }) {
   const passwordHash = await getPasswordHash();
   const fixtures = [
     {
-      email: process.env.SEED_SUPER_ADMIN_EMAIL || "admin@medcore.local",
+      email: process.env.SEED_SUPER_ADMIN_EMAIL || "admin@hospital.com",
       firstName: "System",
       lastName: "Administrator",
       staffId: "ADM-001",
@@ -1668,7 +1668,7 @@ async function main() {
   console.log(`Patient: ${patientContext.patient.hospitalNumber}`);
   console.log(`Invoice: ${finance.invoice.invoiceNo}`);
   console.log(`Prescription: ${pharmacy.prescription.prescriptionNo}`);
-  console.log("Default login: admin@medcore.local / Admin@123");
+  console.log("Default login: admin@hospital.com / password123");
 }
 
 main()

@@ -16,7 +16,7 @@
     "format:check": "prettier . --check"
   },
   "dependencies": {
-    "@prisma/client": "^5.19.1",
+    "@prisma/client": "5.22.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -38,6 +38,6 @@
     "globals": "^17.6.0",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
-    "prisma": "^5.19.1"
+    "prisma": "5.22.0"
   }
 }
