@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { FileDown, TrendingUp, AlertCircle, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { useOutstandingSummary, useAgingReport, useWriteOffReport } from "../hooks/useInvoiceReports";
 import { formatCurrency } from "../utils/moneyFormat";
 import { toast } from "sonner";

@@ -1,5 +1,5 @@
 import { disputeRepository } from "../repositories/dispute.repository.js";
-import { logDisputeCreated, logDisputeResolved } from "./credit-audit.service.js";
+import { logDisputeResolved } from "./credit-audit.service.js";
 
 /**
  * Create a credit dispute
@@ -95,8 +95,6 @@ export async function resolveDispute({
  */
 export async function cancelDispute({
   disputeId,
-  tenantId,
-  branchId,
   resolvedById,
   resolutionNotes,
 }) {

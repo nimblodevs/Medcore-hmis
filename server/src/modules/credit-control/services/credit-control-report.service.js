@@ -2,12 +2,12 @@ import { caseRepository } from "../repositories/case.repository.js";
 
 /**
  * Get credit control dashboard statistics
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Object>} Dashboard statistics
  */
-export async function getDashboardStats(tenantId, branchId) {
-  const stats = await caseRepository.getDashboardStats(tenantId, branchId);
+export async function getDashboardStats(_tenantId, _branchId) {
+  const stats = await caseRepository.getDashboardStats(_tenantId, _branchId);
 
   // Calculate totals
   const totalActiveCases =
@@ -26,17 +26,17 @@ export async function getDashboardStats(tenantId, branchId) {
 
 /**
  * Get aging report for accounts
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @param {Object} options - Report options
  * @returns {Promise<Object>} Aging report data
  */
-export async function getAgingReport(tenantId, branchId, options = {}) {
+export async function getAgingReport(_tenantId, _branchId, options = {}) {
   const { status, riskLevel } = options;
 
   const filters = {
-    tenantId,
-    branchId,
+    _tenantId,
+    _branchId,
     page: 1,
     limit: 1000, // Get all for report
   };
@@ -71,15 +71,15 @@ export async function getAgingReport(tenantId, branchId, options = {}) {
 
 /**
  * Get collector workload report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Array>} Collector workload data
  */
-export async function getCollectorWorkload(tenantId, branchId) {
+export async function getCollectorWorkload(_tenantId, _branchId) {
   // Get all cases grouped by collector
   const result = await caseRepository.findByFilters({
-    tenantId,
-    branchId,
+    _tenantId,
+    _branchId,
     page: 1,
     limit: 1000,
   });
@@ -134,11 +134,11 @@ export async function getCollectorWorkload(tenantId, branchId) {
 
 /**
  * Get promises report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Object>} Promises report data
  */
-export async function getPromisesReport(tenantId, branchId) {
+export async function getPromisesReport(_tenantId, _branchId) {
   // This would ideally query a dedicated promises repository
   // For now, we'll return a placeholder structure
   return {
@@ -152,11 +152,11 @@ export async function getPromisesReport(tenantId, branchId) {
 
 /**
  * Get holds report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Object>} Holds report data
  */
-export async function getHoldsReport(tenantId, branchId) {
+export async function getHoldsReport(_tenantId, _branchId) {
   // This would ideally query a dedicated holds repository
   // For now, we'll return a placeholder structure
   return {
@@ -169,11 +169,11 @@ export async function getHoldsReport(tenantId, branchId) {
 
 /**
  * Get disputes report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Object>} Disputes report data
  */
-export async function getDisputesReport(tenantId, branchId) {
+export async function getDisputesReport(_tenantId, _branchId) {
   // This would ideally query a dedicated disputes repository
   // For now, we'll return a placeholder structure
   return {
@@ -188,11 +188,11 @@ export async function getDisputesReport(tenantId, branchId) {
 
 /**
  * Get write-offs report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @returns {Promise<Object>} Write-offs report data
  */
-export async function getWriteOffsReport(tenantId, branchId) {
+export async function getWriteOffsReport(_tenantId, _branchId) {
   // This would ideally query a dedicated write-offs repository
   // For now, we'll return a placeholder structure
   return {
@@ -208,20 +208,20 @@ export async function getWriteOffsReport(tenantId, branchId) {
 
 /**
  * Get overdue accounts report
- * @param {string} tenantId - Tenant ID
- * @param {string} branchId - Branch ID
+ * @param {string} _tenantId - Tenant ID
+ * @param {string} _branchId - Branch ID
  * @param {Object} options - Report options
  * @param {string} [options.agingBucket] - Filter by aging bucket
  * @param {string} [options.riskLevel] - Filter by risk level
  * @param {number} [options.limit] - Limit results
  * @returns {Promise<Object>} Overdue accounts report data
  */
-export async function getOverdueAccountsReport(tenantId, branchId, options = {}) {
+export async function getOverdueAccountsReport(_tenantId, _branchId, options = {}) {
   const { agingBucket, riskLevel, limit } = options;
 
   const filters = {
-    tenantId,
-    branchId,
+    _tenantId,
+    _branchId,
     status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
   };
 

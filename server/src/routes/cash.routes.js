@@ -24,7 +24,6 @@ import {
   reviewHandover,
   getCashDashboardStats
 } from "../controllers/cash.controller.js";
-import { validateRequest } from "../middlewares/validateRequest.js";
 
 const router = Router();
 

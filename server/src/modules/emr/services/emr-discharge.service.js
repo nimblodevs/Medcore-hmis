@@ -1,5 +1,5 @@
 import prisma from "../../config/database.js";
-import { ClinicalRecordStatus, EmrEncounterStatus } from "@prisma/client";
+import { ClinicalRecordStatus } from "@prisma/client";
 import { 
   recordDischargeSummaryCreated, 
   recordDischargeSummarySigned 
@@ -202,7 +202,7 @@ export async function signDischargeSummary(encounterId, user, ipAddress, userAge
   // Audit log
   await recordDischargeSummarySigned(
     encounterId,
-    encounter.patientId,
+    summary.encounter.patientId,
     user?.id,
     "EmrDischargeSummary",
     summary.id,

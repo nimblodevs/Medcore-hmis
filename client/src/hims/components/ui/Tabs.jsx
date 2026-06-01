@@ -17,9 +17,10 @@ const TabsList = React.forwardRef(({ className, ...props }, ref) => (
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
-const TabsTrigger = React.forwardRef(({ className, ...props }, ref) => (
+const TabsTrigger = React.forwardRef(({ className, type = "button", ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
+    type={type}
     className={cn(
       "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 disabled:pointer-events-none disabled:opacity-50",
       "data-[state=active]:bg-cyan-700 data-[state=active]:text-white data-[state=active]:shadow-sm",

@@ -1,8 +1,6 @@
 const {
   createDebtorAccountSchema,
-  updateDebtorAccountSchema,
-  changeDebtorStatusSchema,
-  holdDebtorAccountSchema,
+  updateDebtorAccountSchema,  holdDebtorAccountSchema,
   suspendDebtorAccountSchema,
   closeDebtorAccountSchema,
 } = require('../validators/debtor-account.validator');
@@ -15,7 +13,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Create a new debtor account
  * POST /api/debtors/accounts
  */
-const createDebtorAccount = catchAsync(async (req, res, next) => {
+const createDebtorAccount = catchAsync(async (req, res, _next) => {
   const validatedData = await createDebtorAccountSchema.parseAsync(req.body);
   
   const user = req.user;
@@ -52,7 +50,7 @@ const createDebtorAccount = catchAsync(async (req, res, next) => {
  * Get all debtor accounts with filtering and pagination
  * GET /api/debtors/accounts
  */
-const getDebtorAccounts = catchAsync(async (req, res, next) => {
+const getDebtorAccounts = catchAsync(async (req, res, _next) => {
   const {
     page = 1,
     limit = 20,
@@ -95,7 +93,7 @@ const getDebtorAccounts = catchAsync(async (req, res, next) => {
  * Get a single debtor account by ID
  * GET /api/debtors/accounts/:id
  */
-const getDebtorAccountById = catchAsync(async (req, res, next) => {
+const getDebtorAccountById = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const tenantId = req.tenant?.id;
 
@@ -116,7 +114,7 @@ const getDebtorAccountById = catchAsync(async (req, res, next) => {
  * Update a debtor account
  * PATCH /api/debtors/accounts/:id
  */
-const updateDebtorAccount = catchAsync(async (req, res, next) => {
+const updateDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await updateDebtorAccountSchema.parseAsync(req.body);
   
@@ -158,7 +156,7 @@ const updateDebtorAccount = catchAsync(async (req, res, next) => {
  * Activate a debtor account
  * POST /api/debtors/accounts/:id/activate
  */
-const activateDebtorAccount = catchAsync(async (req, res, next) => {
+const activateDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -201,7 +199,7 @@ const activateDebtorAccount = catchAsync(async (req, res, next) => {
  * Put a debtor account on hold
  * POST /api/debtors/accounts/:id/hold
  */
-const holdDebtorAccount = catchAsync(async (req, res, next) => {
+const holdDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await holdDebtorAccountSchema.parseAsync(req.body);
   
@@ -247,7 +245,7 @@ const holdDebtorAccount = catchAsync(async (req, res, next) => {
  * Release a debtor account from hold
  * POST /api/debtors/accounts/:id/release-hold
  */
-const releaseHoldDebtorAccount = catchAsync(async (req, res, next) => {
+const releaseHoldDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -288,7 +286,7 @@ const releaseHoldDebtorAccount = catchAsync(async (req, res, next) => {
  * Suspend a debtor account
  * POST /api/debtors/accounts/:id/suspend
  */
-const suspendDebtorAccount = catchAsync(async (req, res, next) => {
+const suspendDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await suspendDebtorAccountSchema.parseAsync(req.body);
   
@@ -334,7 +332,7 @@ const suspendDebtorAccount = catchAsync(async (req, res, next) => {
  * Close a debtor account
  * POST /api/debtors/accounts/:id/close
  */
-const closeDebtorAccount = catchAsync(async (req, res, next) => {
+const closeDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await closeDebtorAccountSchema.parseAsync(req.body);
   
@@ -380,7 +378,7 @@ const closeDebtorAccount = catchAsync(async (req, res, next) => {
  * Archive a debtor account
  * POST /api/debtors/accounts/:id/archive
  */
-const archiveDebtorAccount = catchAsync(async (req, res, next) => {
+const archiveDebtorAccount = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;

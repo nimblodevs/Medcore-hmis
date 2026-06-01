@@ -1,5 +1,5 @@
 import { holdRepository } from "../repositories/hold.repository.js";
-import { logHoldRecommended, logHoldApproved, logHoldReleased } from "./credit-audit.service.js";
+import { logHoldApproved, logHoldReleased } from "./credit-audit.service.js";
 
 /**
  * Recommend a credit hold for an account
@@ -84,8 +84,6 @@ export async function approveHold({
  */
 export async function rejectHold({
   holdId,
-  tenantId,
-  branchId,
   rejectedById,
   rejectionReason,
 }) {

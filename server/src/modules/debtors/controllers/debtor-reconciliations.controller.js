@@ -7,7 +7,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get all reconciliations for a debtor account
  * GET /api/debtors/accounts/:accountId/reconciliations
  */
-const getDebtorReconciliations = catchAsync(async (req, res, next) => {
+const getDebtorReconciliations = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { status } = req.query;
   const tenantId = req.tenant?.id;
@@ -30,7 +30,7 @@ const getDebtorReconciliations = catchAsync(async (req, res, next) => {
  * Create a new reconciliation for a debtor account
  * POST /api/debtors/accounts/:accountId/reconciliations
  */
-const createDebtorReconciliation = catchAsync(async (req, res, next) => {
+const createDebtorReconciliation = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const {
     statementId,
@@ -77,7 +77,7 @@ const createDebtorReconciliation = catchAsync(async (req, res, next) => {
  * Get a single reconciliation by ID
  * GET /api/debtors/reconciliations/:id
  */
-const getDebtorReconciliationById = catchAsync(async (req, res, next) => {
+const getDebtorReconciliationById = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const tenantId = req.tenant?.id;
 
@@ -98,7 +98,7 @@ const getDebtorReconciliationById = catchAsync(async (req, res, next) => {
  * Update a reconciliation (matched/unmatched amounts)
  * PATCH /api/debtors/reconciliations/:id
  */
-const updateDebtorReconciliation = catchAsync(async (req, res, next) => {
+const updateDebtorReconciliation = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const { matchedAmount, unmatchedAmount, notes } = req.body;
   
@@ -152,7 +152,7 @@ const updateDebtorReconciliation = catchAsync(async (req, res, next) => {
  * Close a reconciliation
  * POST /api/debtors/reconciliations/:id/close
  */
-const closeDebtorReconciliation = catchAsync(async (req, res, next) => {
+const closeDebtorReconciliation = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;

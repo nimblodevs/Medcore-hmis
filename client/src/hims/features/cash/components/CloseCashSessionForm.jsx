@@ -2,10 +2,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { closeCashSessionSchema } from "../schemas/cashSchemas";
 import { useCloseCashSession, useCashSession } from "../hooks/useCash";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
-import { Textarea } from "../../../components/ui/textarea";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { Label } from "../../../components/ui/Label";
+import { Textarea } from "../../../components/ui/Textarea";
 
 const CloseCashSessionForm = ({ sessionId, onSuccess }) => {
   const closeMutation = useCloseCashSession();

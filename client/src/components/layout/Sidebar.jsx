@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -8,7 +8,9 @@ import {
   User,
   ChevronDown,
   Calendar, 
+  CalendarDays,
   ClipboardList, 
+  ClipboardCheck,
   Settings, 
   HelpCircle,
   Activity,
@@ -30,6 +32,9 @@ import {
   AlertCircle,
   Network,
   KeyRound,
+  Clock,
+  Ban,
+  FolderKanban,
 } from "lucide-react";
 
 const PAGE_ROUTES = {
@@ -48,6 +53,10 @@ const PAGE_ROUTES = {
   dispatches: "/finance/dispatches",
   insurance_claim_allocation: "/finance/insurance-claim-allocation",
   aging_analysis: "/finance/aging-analysis",
+  invoice_management: "/invoice-management",
+  invoice_create: "/invoice-management/create",
+  invoice_reports: "/invoice-management/reports",
+  invoice_disputes: "/invoice-management/disputes",
   pharmacy_dashboard: "/pharmacy/dashboard",
   pharmacy_drugs: "/pharmacy/drugs",
   pharmacy_stock: "/pharmacy/stock",
@@ -58,17 +67,37 @@ const PAGE_ROUTES = {
   user_management_roles: "/admin/users/roles",
   user_management_departments: "/admin/users/departments",
   user_management_branches: "/admin/users/branches",
-  appointments: "/appointments",
-  prescriptions: "/emr",
+  appointments_dashboard: "/appointments",
+  appointment_book: "/appointments/book",
+  appointment_check_in: "/appointments/check-in",
+  appointment_calendar: "/appointments/calendar",
+  appointment_reports: "/appointments/reports",
+  emr_dashboard: "/emr",
+  emr_triage: "/emr/triage",
   cash_dashboard: "/cash-management",
   cash_counters: "/cash-management/counters",
   cash_cashiers: "/cash-management/cashiers",
   cash_sessions: "/cash-management/sessions",
+  credit_control_dashboard: "/credit-control",
+  credit_control_cases: "/credit-control/cases",
+  credit_control_follow_ups: "/credit-control/follow-ups",
+  credit_control_holds: "/credit-control/holds",
+  credit_control_disputes: "/credit-control/disputes",
+  credit_control_write_offs: "/credit-control/write-offs",
+  credit_control_reports: "/credit-control/reports",
   analytics: "/dashboard",
   profile: "/auth/profile",
   reports: "/finance/dashboard",
   settings: "/dashboard",
 };
+
+const FINANCE_PAGES = ["finance_dashboard", "op_cons_billing", "op_service_billing", "cashier_transactions", "debtors", "schemes", "invoices", "interim_invoices", "credit_payments", "dispatches", "insurance_claim_allocation", "aging_analysis", "invoice_management", "invoice_create", "invoice_reports", "invoice_disputes"];
+const PHARMACY_PAGES = ["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"];
+const APPOINTMENT_PAGES = ["appointments_dashboard", "appointment_book", "appointment_check_in", "appointment_calendar", "appointment_reports"];
+const EMR_PAGES = ["emr_dashboard", "emr_triage"];
+const CASH_MANAGEMENT_PAGES = ["cash_dashboard", "cash_counters", "cash_cashiers", "cash_sessions"];
+const CREDIT_CONTROL_PAGES = ["credit_control_dashboard", "credit_control_cases", "credit_control_follow_ups", "credit_control_holds", "credit_control_disputes", "credit_control_write_offs", "credit_control_reports"];
+const USER_MANAGEMENT_PAGES = ["user_management_users", "user_management_roles", "user_management_departments", "user_management_branches"];
 
 const getActivePageFromPath = (pathname) => {
   if (pathname.startsWith("/patients/list")) return "patient_list";
@@ -85,25 +114,46 @@ const getActivePageFromPath = (pathname) => {
   if (pathname.startsWith("/finance/insurance-claim-allocation")) return "insurance_claim_allocation";
   if (pathname.startsWith("/finance/aging-analysis")) return "aging_analysis";
   if (pathname.startsWith("/finance")) return "finance_dashboard";
+  if (pathname.startsWith("/invoice-management/create")) return "invoice_create";
+  if (pathname.startsWith("/invoice-management/reports")) return "invoice_reports";
+  if (pathname.startsWith("/invoice-management/disputes")) return "invoice_disputes";
+  if (pathname.startsWith("/invoice-management")) return "invoice_management";
   if (pathname.startsWith("/pharmacy/drugs")) return "pharmacy_drugs";
   if (pathname.startsWith("/pharmacy/stock")) return "pharmacy_stock";
   if (pathname.startsWith("/pharmacy/dispensing")) return "pharmacy_dispensing";
   if (pathname.startsWith("/pharmacy/purchases")) return "pharmacy_purchases";
   if (pathname.startsWith("/pharmacy/reports")) return "pharmacy_reports";
   if (pathname.startsWith("/pharmacy")) return "pharmacy_dashboard";
+  if (pathname.startsWith("/admin/users/roles")) return "user_management_roles";
+  if (pathname.startsWith("/admin/users/departments")) return "user_management_departments";
+  if (pathname.startsWith("/admin/users/branches")) return "user_management_branches";
   if (pathname.startsWith("/admin/users")) return "user_management_users";
-  if (pathname.startsWith("/appointments")) return "appointments";
+  if (pathname.startsWith("/appointments/book")) return "appointment_book";
+  if (pathname.startsWith("/appointments/check-in")) return "appointment_check_in";
+  if (pathname.startsWith("/appointments/calendar")) return "appointment_calendar";
+  if (pathname.startsWith("/appointments/reports")) return "appointment_reports";
+  if (pathname.startsWith("/appointments")) return "appointments_dashboard";
+  if (pathname.startsWith("/emr/triage")) return "emr_triage";
+  if (pathname.startsWith("/emr")) return "emr_dashboard";
   if (pathname.startsWith("/cash-management/counters")) return "cash_counters";
   if (pathname.startsWith("/cash-management/cashiers")) return "cash_cashiers";
   if (pathname.startsWith("/cash-management/sessions")) return "cash_sessions";
   if (pathname.startsWith("/cash-management")) return "cash_dashboard";
+  if (pathname.startsWith("/credit-control/cases")) return "credit_control_cases";
+  if (pathname.startsWith("/credit-control/follow-ups")) return "credit_control_follow_ups";
+  if (pathname.startsWith("/credit-control/holds")) return "credit_control_holds";
+  if (pathname.startsWith("/credit-control/disputes")) return "credit_control_disputes";
+  if (pathname.startsWith("/credit-control/write-offs")) return "credit_control_write_offs";
+  if (pathname.startsWith("/credit-control/reports")) return "credit_control_reports";
+  if (pathname.startsWith("/credit-control")) return "credit_control_dashboard";
   if (pathname.startsWith("/auth/profile")) return "profile";
   if (pathname.startsWith("/dashboard")) return "dashboard";
-  return "appointments";
+  return "appointments_dashboard";
 };
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) => (
 <button
+  type="button"
   onClick={onClick}
   className={[
     `
@@ -205,6 +255,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, isSubItem = false }) 
 const SidebarDropdown = ({ icon: Icon, label, active, isOpen, onToggle, children }) => (
   <div className="space-y-1">
     <button
+      type="button"
       onClick={onToggle}
       className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition-all ${
         active && !isOpen
@@ -253,19 +304,37 @@ const Sidebar = ({ isOpen, activePage, onPageChange }) => {
 
   const [patientsMenuOpen, setPatientsMenuOpen] = useState(true);
   const [financeMenuOpen, setFinanceMenuOpen] = useState(
-    ["finance_dashboard", "op_cons_billing", "debtors", "schemes"].includes(currentPage)
+    FINANCE_PAGES.includes(currentPage)
   );
   const [pharmacyMenuOpen, setPharmacyMenuOpen] = useState(
-    ["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"].includes(currentPage)
+    PHARMACY_PAGES.includes(currentPage)
   );
-  const cashManagementPages = ["cash_dashboard", "cash_counters", "cash_cashiers", "cash_sessions", "cash_payments", "cash_refunds", "cash_handovers", "cash_reports"];
+  const [appointmentsMenuOpen, setAppointmentsMenuOpen] = useState(
+    APPOINTMENT_PAGES.includes(currentPage)
+  );
+  const [emrMenuOpen, setEmrMenuOpen] = useState(
+    EMR_PAGES.includes(currentPage)
+  );
   const [cashMenuOpen, setCashMenuOpen] = useState(
-    cashManagementPages.includes(currentPage)
+    CASH_MANAGEMENT_PAGES.includes(currentPage)
   );
-  const userManagementPages = ["user_management_users", "user_management_roles", "user_management_departments", "user_management_branches"];
+  const [creditControlMenuOpen, setCreditControlMenuOpen] = useState(
+    CREDIT_CONTROL_PAGES.includes(currentPage)
+  );
   const [userManagementMenuOpen, setUserManagementMenuOpen] = useState(
-    userManagementPages.includes(currentPage)
+    USER_MANAGEMENT_PAGES.includes(currentPage)
   );
+
+  useEffect(() => {
+    if (currentPage === "patients" || currentPage === "patient_list") setPatientsMenuOpen(true);
+    if (FINANCE_PAGES.includes(currentPage)) setFinanceMenuOpen(true);
+    if (PHARMACY_PAGES.includes(currentPage)) setPharmacyMenuOpen(true);
+    if (APPOINTMENT_PAGES.includes(currentPage)) setAppointmentsMenuOpen(true);
+    if (EMR_PAGES.includes(currentPage)) setEmrMenuOpen(true);
+    if (CASH_MANAGEMENT_PAGES.includes(currentPage)) setCashMenuOpen(true);
+    if (CREDIT_CONTROL_PAGES.includes(currentPage)) setCreditControlMenuOpen(true);
+    if (USER_MANAGEMENT_PAGES.includes(currentPage)) setUserManagementMenuOpen(true);
+  }, [currentPage]);
 
   return (
     <>
@@ -352,7 +421,7 @@ const Sidebar = ({ isOpen, activePage, onPageChange }) => {
             <SidebarDropdown
               icon={Database}
               label="Finance"
-              active={["finance_dashboard", "op_cons_billing", "op_service_billing", "cashier_transactions", "debtors", "schemes", "invoices", "interim_invoices", "credit_payments", "dispatches", "insurance_claim_allocation", "aging_analysis"].includes(currentPage)}
+              active={FINANCE_PAGES.includes(currentPage)}
               isOpen={financeMenuOpen}
               onToggle={() => setFinanceMenuOpen(!financeMenuOpen)}
             >
@@ -440,12 +509,40 @@ const Sidebar = ({ isOpen, activePage, onPageChange }) => {
                 isSubItem={true}
                 onClick={() => handlePageChange("aging_analysis")}
               />
+              <SidebarItem
+                icon={FileText}
+                label="Invoice Management"
+                active={currentPage === "invoice_management"}
+                isSubItem={true}
+                onClick={() => handlePageChange("invoice_management")}
+              />
+              <SidebarItem
+                icon={Receipt}
+                label="Create Invoice"
+                active={currentPage === "invoice_create"}
+                isSubItem={true}
+                onClick={() => handlePageChange("invoice_create")}
+              />
+              <SidebarItem
+                icon={BarChart3}
+                label="Invoice Reports"
+                active={currentPage === "invoice_reports"}
+                isSubItem={true}
+                onClick={() => handlePageChange("invoice_reports")}
+              />
+              <SidebarItem
+                icon={AlertCircle}
+                label="Invoice Disputes"
+                active={currentPage === "invoice_disputes"}
+                isSubItem={true}
+                onClick={() => handlePageChange("invoice_disputes")}
+              />
             </SidebarDropdown>
 
             <SidebarDropdown
               icon={Package}
               label="Pharmacy"
-              active={["pharmacy_dashboard", "pharmacy_drugs", "pharmacy_stock", "pharmacy_dispensing", "pharmacy_purchases", "pharmacy_reports"].includes(currentPage)}
+              active={PHARMACY_PAGES.includes(currentPage)}
               isOpen={pharmacyMenuOpen}
               onToggle={() => setPharmacyMenuOpen(!pharmacyMenuOpen)}
             >
@@ -496,7 +593,7 @@ const Sidebar = ({ isOpen, activePage, onPageChange }) => {
             <SidebarDropdown
               icon={UserCog}
               label="User Management"
-              active={userManagementPages.includes(currentPage)}
+              active={USER_MANAGEMENT_PAGES.includes(currentPage)}
               isOpen={userManagementMenuOpen}
               onToggle={() => setUserManagementMenuOpen(!userManagementMenuOpen)}
             >
@@ -530,24 +627,167 @@ const Sidebar = ({ isOpen, activePage, onPageChange }) => {
               />
             </SidebarDropdown>
 
-            <SidebarItem 
-              icon={Calendar} 
-              label="Appointments" 
-              active={currentPage === "appointments"}
-              onClick={() => handlePageChange("appointments")} 
-            />
-            <SidebarItem 
-              icon={ClipboardList} 
-              label="Prescriptions" 
-              active={currentPage === "prescriptions"}
-              onClick={() => handlePageChange("prescriptions")} 
-            />
-            <SidebarItem
+            <SidebarDropdown
+              icon={Calendar}
+              label="Appointments"
+              active={APPOINTMENT_PAGES.includes(currentPage)}
+              isOpen={appointmentsMenuOpen}
+              onToggle={() => setAppointmentsMenuOpen(!appointmentsMenuOpen)}
+            >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={currentPage === "appointments_dashboard"}
+                isSubItem={true}
+                onClick={() => handlePageChange("appointments_dashboard")}
+              />
+              <SidebarItem
+                icon={UserPlus}
+                label="Book Appointment"
+                active={currentPage === "appointment_book"}
+                isSubItem={true}
+                onClick={() => handlePageChange("appointment_book")}
+              />
+              <SidebarItem
+                icon={ClipboardCheck}
+                label="Check In"
+                active={currentPage === "appointment_check_in"}
+                isSubItem={true}
+                onClick={() => handlePageChange("appointment_check_in")}
+              />
+              <SidebarItem
+                icon={CalendarDays}
+                label="Calendar"
+                active={currentPage === "appointment_calendar"}
+                isSubItem={true}
+                onClick={() => handlePageChange("appointment_calendar")}
+              />
+              <SidebarItem
+                icon={BarChart3}
+                label="Reports"
+                active={currentPage === "appointment_reports"}
+                isSubItem={true}
+                onClick={() => handlePageChange("appointment_reports")}
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
+              icon={ClipboardList}
+              label="EMR"
+              active={EMR_PAGES.includes(currentPage)}
+              isOpen={emrMenuOpen}
+              onToggle={() => setEmrMenuOpen(!emrMenuOpen)}
+            >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={currentPage === "emr_dashboard"}
+                isSubItem={true}
+                onClick={() => handlePageChange("emr_dashboard")}
+              />
+              <SidebarItem
+                icon={Activity}
+                label="Triage"
+                active={currentPage === "emr_triage"}
+                isSubItem={true}
+                onClick={() => handlePageChange("emr_triage")}
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
               icon={Wallet}
               label="Cash Management"
-              active={currentPage === "cash_dashboard" || currentPage.startsWith("cash_")}
-              onClick={() => handlePageChange("cash_dashboard")}
-            />
+              active={CASH_MANAGEMENT_PAGES.includes(currentPage)}
+              isOpen={cashMenuOpen}
+              onToggle={() => setCashMenuOpen(!cashMenuOpen)}
+            >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={currentPage === "cash_dashboard"}
+                isSubItem={true}
+                onClick={() => handlePageChange("cash_dashboard")}
+              />
+              <SidebarItem
+                icon={Database}
+                label="Counters"
+                active={currentPage === "cash_counters"}
+                isSubItem={true}
+                onClick={() => handlePageChange("cash_counters")}
+              />
+              <SidebarItem
+                icon={UserCog}
+                label="Cashiers"
+                active={currentPage === "cash_cashiers"}
+                isSubItem={true}
+                onClick={() => handlePageChange("cash_cashiers")}
+              />
+              <SidebarItem
+                icon={Receipt}
+                label="Sessions"
+                active={currentPage === "cash_sessions"}
+                isSubItem={true}
+                onClick={() => handlePageChange("cash_sessions")}
+              />
+            </SidebarDropdown>
+
+            <SidebarDropdown
+              icon={ShieldCheck}
+              label="Credit Control"
+              active={CREDIT_CONTROL_PAGES.includes(currentPage)}
+              isOpen={creditControlMenuOpen}
+              onToggle={() => setCreditControlMenuOpen(!creditControlMenuOpen)}
+            >
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Overview"
+                active={currentPage === "credit_control_dashboard"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_dashboard")}
+              />
+              <SidebarItem
+                icon={FolderKanban}
+                label="Cases"
+                active={currentPage === "credit_control_cases"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_cases")}
+              />
+              <SidebarItem
+                icon={Clock}
+                label="Follow Ups"
+                active={currentPage === "credit_control_follow_ups"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_follow_ups")}
+              />
+              <SidebarItem
+                icon={Ban}
+                label="Credit Holds"
+                active={currentPage === "credit_control_holds"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_holds")}
+              />
+              <SidebarItem
+                icon={AlertCircle}
+                label="Disputes"
+                active={currentPage === "credit_control_disputes"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_disputes")}
+              />
+              <SidebarItem
+                icon={CreditCard}
+                label="Write Offs"
+                active={currentPage === "credit_control_write_offs"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_write_offs")}
+              />
+              <SidebarItem
+                icon={BarChart3}
+                label="Reports"
+                active={currentPage === "credit_control_reports"}
+                isSubItem={true}
+                onClick={() => handlePageChange("credit_control_reports")}
+              />
+            </SidebarDropdown>
           </nav>
 
           <div className="mt-8 mb-4 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">

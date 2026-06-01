@@ -1,5 +1,5 @@
 import prisma from "../../config/database.js";
-import { EmrEncounterStatus, ClinicalRecordStatus } from "@prisma/client";
+import { EmrEncounterStatus } from "@prisma/client";
 import { 
   recordEncounterCreated, 
   recordEncounterUpdated, 
@@ -355,12 +355,6 @@ export async function closeEncounter(encounterId, user, ipAddress, userAgent) {
   if (existing.status === 'CLOSED' || existing.status === 'CANCELLED') {
     throw new Error("Encounter is already closed or cancelled");
   }
-
-  // Check for unsigned draft notes (warning only, allow override)
-  const hasDraftNotes = existing.notes.length > 0;
-  
-  // Check for final diagnosis (recommended but not required for MVP)
-  const hasFinalDiagnosis = existing.diagnoses.some(d => d.diagnosisType === 'FINAL');
 
   // Check for pending STAT orders
   const hasPendingStatOrders = existing.orders.length > 0;

@@ -13,14 +13,32 @@ import notFound from "./middlewares/notFound.js";
 import auditLogger from "./middlewares/auditLogger.js";
 
 const app = express();
+const configuredOrigins = env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean);
+const csbOriginPattern = /^https:\/\/[a-z0-9-]+-\d+\.csb\.app$/i;
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (configuredOrigins.includes(origin)) return true;
+  if (csbOriginPattern.test(origin)) return true;
+  return false;
+};
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"]
+};
+
+app.set("trust proxy", env.TRUST_PROXY);
 
 app.use(helmet());
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
-    credentials: true
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(
   rateLimit({
     windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -48,4 +66,3 @@ app.use(notFound);
 app.use(errorHandler);
 
 export default app;
-

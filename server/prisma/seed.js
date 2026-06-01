@@ -1,9 +1,13 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, ROLES } from "../src/config/rbac.js";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter });
 
 const now = () => new Date();
 const daysFromNow = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
@@ -39,14 +43,6 @@ const ROLE_LABELS = {
 
 const getPasswordHash = async () =>
   bcrypt.hash(process.env.SEED_SUPER_ADMIN_PASSWORD || "password123", Number(process.env.BCRYPT_SALT_ROUNDS || 12));
-
-const upsertById = async (model, where, create, update = create) => {
-  const existing = await model.findFirst({ where });
-  if (existing) {
-    return model.update({ where: { id: existing.id }, data: update });
-  }
-  return model.create({ data: create });
-};
 
 async function seedPermissions() {
   for (const code of Object.values(PERMISSIONS)) {
@@ -1603,7 +1599,7 @@ async function seedPatientBilling({ tenant, mainBranch, users, patient, patientV
   return { bill };
 }
 
-async function seedAppointmentIfAvailable({ tenant, mainBranch, users, patient, departments }) {
+async function seedAppointmentIfAvailable({ users, patient, departments }) {
   if (!prisma.appointment) {
     console.log("Appointment model is not in prisma/schema.prisma; skipping appointment seed.");
     return null;

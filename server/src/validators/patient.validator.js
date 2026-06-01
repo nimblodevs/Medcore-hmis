@@ -34,8 +34,6 @@ const optionalEmail = z
   });
 
 const NAME_REGEX = /^[A-Za-z][A-Za-z\s'-]*$/;
-const ID_NUMBER_REGEX = /^[A-Za-z0-9-]{4,20}$/;
-
 const nameField = (label) =>
   z
     .string()
@@ -44,13 +42,6 @@ const nameField = (label) =>
     .min(2, `${label} must be at least 2 characters`)
     .max(100, `${label} should not exceed 100 characters`)
     .regex(NAME_REGEX, `${label} can only contain letters, spaces, hyphens, or apostrophes`);
-
-const optionalDetail = z
-  .string()
-  .trim()
-  .max(200)
-  .optional()
-  .or(z.literal(""));
 
 // ============================================
 // CREATE PATIENT SCHEMA

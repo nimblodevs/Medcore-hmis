@@ -1,83 +1,68 @@
-import { Request, Response, NextFunction } from "express";
-import { createDebtorAccountSchema, updateDebtorAccountSchema, activateDebtorAccountSchema, holdDebtorAccountSchema, suspendDebtorAccountSchema, closeDebtorAccountSchema } from "../validators/debtor-account.validator.js";
+import {
+  activateDebtorAccountSchema,
+  closeDebtorAccountSchema,
+  createDebtorAccountSchema,
+  holdDebtorAccountSchema,
+  suspendDebtorAccountSchema,
+  updateDebtorAccountSchema,
+} from "../validators/debtor-account.validator.js";
 
-export function createDebtorAccountValidator(req: Request, res: Response, next: NextFunction) {
+const sendValidationError = (res, error) =>
+  res.status(400).json({
+    success: false,
+    message: "Validation failed",
+    errors: error.errors.map((err) => ({
+      field: err.path.join("."),
+      message: err.message,
+    })),
+  });
+
+export function createDebtorAccountValidator(req, res, next) {
   try {
-    const validatedData = createDebtorAccountSchema.parse(req.body);
-    req.validatedData = validatedData;
+    req.validatedData = createDebtorAccountSchema.parse(req.body);
     next();
   } catch (error) {
     if (error.errors) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: error.errors.map((err: any) => ({
-          field: err.path.join('.'),
-          message: err.message
-        }))
-      });
+      return sendValidationError(res, error);
     }
     next(error);
   }
 }
 
-export function updateDebtorAccountValidator(req: Request, res: Response, next: NextFunction) {
+export function updateDebtorAccountValidator(req, res, next) {
   try {
-    const validatedData = updateDebtorAccountSchema.parse(req.body);
-    req.validatedData = validatedData;
+    req.validatedData = updateDebtorAccountSchema.parse(req.body);
     next();
   } catch (error) {
     if (error.errors) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: error.errors.map((err: any) => ({
-          field: err.path.join('.'),
-          message: err.message
-        }))
-      });
+      return sendValidationError(res, error);
     }
     next(error);
   }
 }
 
-export function statusActionValidator(req: Request, res: Response, next: NextFunction) {
+export function statusActionValidator(req, res, next) {
   try {
-    const action = req.path.split('/').pop();
-    
-    let schema;
-    switch (action) {
-      case 'activate':
-        schema = activateDebtorAccountSchema;
-        break;
-      case 'hold':
-        schema = holdDebtorAccountSchema;
-        break;
-      case 'suspend':
-        schema = suspendDebtorAccountSchema;
-        break;
-      case 'close':
-        schema = closeDebtorAccountSchema;
-        break;
-      default:
-        // For actions without body requirements (release-hold, archive)
-        req.validatedData = {};
-        return next();
+    const action = req.path.split("/").pop();
+
+    const schemasByAction = {
+      activate: activateDebtorAccountSchema,
+      hold: holdDebtorAccountSchema,
+      suspend: suspendDebtorAccountSchema,
+      close: closeDebtorAccountSchema,
+    };
+
+    const schema = schemasByAction[action];
+    if (!schema) {
+      req.validatedData = {};
+      return next();
     }
 
-    const validatedData = schema.parse(req.body);
-    req.validatedData = validatedData;
+    req.validatedData = schema.parse(req.body);
     next();
   } catch (error) {
     if (error.errors) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: error.errors.map((err: any) => ({
-          field: err.path.join('.'),
-          message: err.message
-        }))
-      });
+      return sendValidationError(res, error);
     }
     next(error);
   }
@@ -86,5 +71,5 @@ export function statusActionValidator(req: Request, res: Response, next: NextFun
 export default {
   createDebtorAccountValidator,
   updateDebtorAccountValidator,
-  statusActionValidator
+  statusActionValidator,
 };

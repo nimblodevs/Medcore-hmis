@@ -1,12 +1,11 @@
 const debtorReportRepository = require('../repositories/debtor-report.repository');
-const { AppError } = require('../../../utils/errors');
 const { catchAsync } = require('../../../utils/catchAsync');
 
 /**
  * Get debtor summary report
  * GET /api/debtors/reports/summary
  */
-const getDebtorSummaryReport = catchAsync(async (req, res, next) => {
+const getDebtorSummaryReport = catchAsync(async (req, res, _next) => {
   const { debtorType, status, startDate, endDate } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -30,7 +29,7 @@ const getDebtorSummaryReport = catchAsync(async (req, res, next) => {
  * Get outstanding report by debtor type
  * GET /api/debtors/reports/outstanding
  */
-const getOutstandingReport = catchAsync(async (req, res, next) => {
+const getOutstandingReport = catchAsync(async (req, res, _next) => {
   const { debtorType, status } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -52,7 +51,7 @@ const getOutstandingReport = catchAsync(async (req, res, next) => {
  * Get aging report
  * GET /api/debtors/reports/aging
  */
-const getAgingReport = catchAsync(async (req, res, next) => {
+const getAgingReport = catchAsync(async (req, res, _next) => {
   const { debtorType, status, asOfDate } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -75,7 +74,7 @@ const getAgingReport = catchAsync(async (req, res, next) => {
  * Get credit limits report
  * GET /api/debtors/reports/credit-limits
  */
-const getCreditLimitsReport = catchAsync(async (req, res, next) => {
+const getCreditLimitsReport = catchAsync(async (req, res, _next) => {
   const { debtorType, status, overLimitOnly } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -98,7 +97,7 @@ const getCreditLimitsReport = catchAsync(async (req, res, next) => {
  * Get statements report
  * GET /api/debtors/reports/statements
  */
-const getStatementsReport = catchAsync(async (req, res, next) => {
+const getStatementsReport = catchAsync(async (req, res, _next) => {
   const { status, periodStart, periodEnd, debtorType } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -122,7 +121,7 @@ const getStatementsReport = catchAsync(async (req, res, next) => {
  * Get reconciliations report
  * GET /api/debtors/reports/reconciliations
  */
-const getReconciliationsReport = catchAsync(async (req, res, next) => {
+const getReconciliationsReport = catchAsync(async (req, res, _next) => {
   const { status, periodStart, periodEnd } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -145,7 +144,7 @@ const getReconciliationsReport = catchAsync(async (req, res, next) => {
  * Get SHA specific report
  * GET /api/debtors/reports/sha
  */
-const getShaReport = catchAsync(async (req, res, next) => {
+const getShaReport = catchAsync(async (req, res, _next) => {
   const { status, asOfDate } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -167,7 +166,7 @@ const getShaReport = catchAsync(async (req, res, next) => {
  * Get insurance specific report
  * GET /api/debtors/reports/insurance
  */
-const getInsuranceReport = catchAsync(async (req, res, next) => {
+const getInsuranceReport = catchAsync(async (req, res, _next) => {
   const { status, asOfDate } = req.query;
   const tenantId = req.tenant?.id;
 
@@ -189,7 +188,7 @@ const getInsuranceReport = catchAsync(async (req, res, next) => {
  * Get corporate specific report
  * GET /api/debtors/reports/corporates
  */
-const getCorporateReport = catchAsync(async (req, res, next) => {
+const getCorporateReport = catchAsync(async (req, res, _next) => {
   const { status, asOfDate, includeDirectCorporate } = req.query;
   const tenantId = req.tenant?.id;
 

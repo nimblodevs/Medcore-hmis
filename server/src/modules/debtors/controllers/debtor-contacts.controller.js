@@ -11,7 +11,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get all contacts for a debtor account
  * GET /api/debtors/accounts/:accountId/contacts
  */
-const getDebtorContacts = catchAsync(async (req, res, next) => {
+const getDebtorContacts = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { contactType, isActive } = req.query;
   const tenantId = req.tenant?.id;
@@ -35,7 +35,7 @@ const getDebtorContacts = catchAsync(async (req, res, next) => {
  * Create a new contact for a debtor account
  * POST /api/debtors/accounts/:accountId/contacts
  */
-const createDebtorContact = catchAsync(async (req, res, next) => {
+const createDebtorContact = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const validatedData = await createDebtorContactSchema.parseAsync(req.body);
   
@@ -72,7 +72,7 @@ const createDebtorContact = catchAsync(async (req, res, next) => {
  * Update a debtor contact
  * PATCH /api/debtors/contacts/:id
  */
-const updateDebtorContact = catchAsync(async (req, res, next) => {
+const updateDebtorContact = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await updateDebtorContactSchema.parseAsync(req.body);
   
@@ -114,7 +114,7 @@ const updateDebtorContact = catchAsync(async (req, res, next) => {
  * Deactivate a debtor contact
  * POST /api/debtors/contacts/:id/deactivate
  */
-const deactivateDebtorContact = catchAsync(async (req, res, next) => {
+const deactivateDebtorContact = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;

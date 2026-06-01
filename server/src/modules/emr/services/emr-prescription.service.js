@@ -222,7 +222,7 @@ export async function cancelPrescription(prescriptionId, reason, user, ipAddress
 /**
  * Send prescription to pharmacy module
  */
-export async function sendToPharmacy(prescriptionId, user, ipAddress, userAgent) {
+export async function sendToPharmacy(prescriptionId, _user, _ipAddress, _userAgent) {
   const prescription = await prisma.emrPrescription.findUnique({
     where: { id: prescriptionId },
     include: {

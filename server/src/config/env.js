@@ -15,6 +15,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   BCRYPT_SALT_ROUNDS: z.coerce.number().min(8).max(15).default(12),
   CORS_ORIGIN: z.string().default("http://localhost:5000"),
+  TRUST_PROXY: z.coerce.number().int().min(0).default(1),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(200)
 });

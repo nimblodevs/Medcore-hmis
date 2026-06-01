@@ -10,6 +10,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { loginSchema } from "../schemas/auth.schema";
 import { useLogin } from "../hooks/useAuth";
 
+const resolveLandingPath = (user) => {
+  const role = user?.role?.name || user?.role || user?.roleName;
+
+  if (["SUPER_ADMIN", "ADMIN", "HOSPITAL_ADMIN", "BRANCH_ADMIN"].includes(role)) return "/admin/users";
+  if (["CASHIER_SUPERVISOR", "CASHIER", "ACCOUNTANT"].includes(role)) return "/cash-management";
+  if (["FINANCE_MANAGER", "CREDIT_CONTROLLER", "AUDITOR", "CLAIMS_OFFICER", "BILLING_OFFICER"].includes(role)) return "/finance/dashboard";
+  if (["PHARMACY_MANAGER", "PHARMACIST", "PHARMACY_CASHIER"].includes(role)) return "/pharmacy/dashboard";
+  if (["NURSE", "DOCTOR", "CLINICIAN", "RECEPTIONIST", "CLINIC_MANAGER"].includes(role)) return "/appointments";
+
+  return "/dashboard";
+};
+
 const LoginForm = () => {
   const navigate = useNavigate();
   const loginMutation = useLogin();
@@ -29,8 +41,8 @@ const LoginForm = () => {
 
   const onSubmit = (data) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
-        navigate("/cash-management");
+      onSuccess: (response) => {
+        navigate(resolveLandingPath(response?.data?.user));
       }
     });
   };
@@ -115,7 +127,7 @@ const LoginForm = () => {
 
           <div className="mt-6 text-center text-sm text-slate-600">
             <p>Demo credentials:</p>
-            <p className="font-mono text-xs">admin@hospital.com / password123</p>
+            <p className="font-mono text-xs">admin@medcore.local / Admin@123</p>
           </div>
         </CardContent>
       </Card>

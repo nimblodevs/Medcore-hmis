@@ -16,19 +16,19 @@ import AgingAnalysis from "./AgingAnalysis";
 export default function FinanceRoutes() {
   return (
     <Routes>
-      <Route path="/dashboard" element={<FinanceDashboard />} />
-      <Route path="/op-cons-billing" element={<OpConsBilling />} />
-      <Route path="/op-service-billing" element={<OpServiceBilling />} />
-      <Route path="/cashier-transactions" element={<CashierTransactions />} />
-      <Route path="/debtors" element={<Debtors />} />
-      <Route path="/schemes" element={<Schemes />} />
-      <Route path="/invoices" element={<Invoices />} />
-      <Route path="/invoices/interim" element={<InterimInvoices />} />
-      <Route path="/invoices/preview/:invoiceId" element={<InvoicePreview />} />
-      <Route path="/credit-payments" element={<CreditPayments />} />
-      <Route path="/dispatches" element={<Dispatches />} />
-      <Route path="/insurance-claim-allocation" element={<InsuranceClaimPayments />} />
-      <Route path="/aging-analysis" element={<AgingAnalysis />} />
+      <Route path="dashboard" element={<FinanceDashboard />} />
+      <Route path="op-cons-billing" element={<OpConsBilling />} />
+      <Route path="op-service-billing" element={<OpServiceBilling />} />
+      <Route path="cashier-transactions" element={<CashierTransactions />} />
+      <Route path="debtors" element={<Debtors />} />
+      <Route path="schemes" element={<Schemes />} />
+      <Route path="invoices" element={<Invoices />} />
+      <Route path="invoices/interim" element={<InterimInvoices />} />
+      <Route path="invoices/preview/:invoiceId" element={<InvoicePreview />} />
+      <Route path="credit-payments" element={<CreditPayments />} />
+      <Route path="dispatches" element={<Dispatches />} />
+      <Route path="insurance-claim-allocation" element={<InsuranceClaimPayments />} />
+      <Route path="aging-analysis" element={<AgingAnalysis />} />
       <Route path="*" element={<Navigate to="/finance/dashboard" replace />} />
     </Routes>
   );

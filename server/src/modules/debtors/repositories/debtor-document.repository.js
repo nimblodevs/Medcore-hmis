@@ -1,5 +1,4 @@
 import prisma from "../../../config/database.js";
-import { createAuditLog } from "../services/debtor-audit.service.js";
 
 /**
  * Upload a document for a debtor account

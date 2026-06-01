@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../config/prisma.js";
 import ApiError from "../utils/apiError.js";
 import { AuditService } from "./audit.service.js";
 import { sessionNo, refundNo, handoverNo } from "../utils/numbering.js";
 
-const prisma = new PrismaClient();
 const auditService = new AuditService();
 
 export class CashSessionService {

@@ -4,12 +4,12 @@ import { motion } from "motion/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, FileText, Plus, Trash2, Eye, CheckCircle, XCircle, AlertTriangle, DollarSign } from "lucide-react";
 import { useAddLineItem, useCreateInvoice } from "../hooks/useInvoices";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/Table";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/components/ui/Dialog";
 import { toast } from "sonner";
 import { formatCurrency } from "../utils/moneyFormat";
 import { getInvoiceStatusColor, INVOICE_LINE_ITEM_TYPE, INVOICE_ADJUSTMENT_TYPE } from "../utils/invoiceStatus";

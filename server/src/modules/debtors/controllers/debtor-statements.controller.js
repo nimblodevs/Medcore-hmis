@@ -7,7 +7,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get all statements for a debtor account
  * GET /api/debtors/accounts/:accountId/statements
  */
-const getDebtorStatements = catchAsync(async (req, res, next) => {
+const getDebtorStatements = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { status, periodStart, periodEnd } = req.query;
   const tenantId = req.tenant?.id;
@@ -32,7 +32,7 @@ const getDebtorStatements = catchAsync(async (req, res, next) => {
  * Generate a new statement for a debtor account
  * POST /api/debtors/accounts/:accountId/statements/generate
  */
-const generateDebtorStatement = catchAsync(async (req, res, next) => {
+const generateDebtorStatement = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { periodStart, periodEnd } = req.body;
   
@@ -74,7 +74,7 @@ const generateDebtorStatement = catchAsync(async (req, res, next) => {
  * Get a single statement by ID
  * GET /api/debtors/statements/:id
  */
-const getDebtorStatementById = catchAsync(async (req, res, next) => {
+const getDebtorStatementById = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const tenantId = req.tenant?.id;
 
@@ -95,7 +95,7 @@ const getDebtorStatementById = catchAsync(async (req, res, next) => {
  * Mark a statement as sent
  * POST /api/debtors/statements/:id/mark-sent
  */
-const markStatementAsSent = catchAsync(async (req, res, next) => {
+const markStatementAsSent = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -134,7 +134,7 @@ const markStatementAsSent = catchAsync(async (req, res, next) => {
  * Acknowledge a statement
  * POST /api/debtors/statements/:id/acknowledge
  */
-const acknowledgeStatement = catchAsync(async (req, res, next) => {
+const acknowledgeStatement = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -173,7 +173,7 @@ const acknowledgeStatement = catchAsync(async (req, res, next) => {
  * Dispute a statement
  * POST /api/debtors/statements/:id/dispute
  */
-const disputeStatement = catchAsync(async (req, res, next) => {
+const disputeStatement = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const { disputeReason } = req.body;
   

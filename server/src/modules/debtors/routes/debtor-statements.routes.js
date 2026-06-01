@@ -2,10 +2,6 @@ const express = require('express');
 const {
   getDebtorStatements,
   generateDebtorStatement,
-  getDebtorStatementById,
-  markStatementAsSent,
-  acknowledgeStatement,
-  disputeStatement,
 } = require('../controllers/debtor-statements.controller');
 
 const router = express.Router();

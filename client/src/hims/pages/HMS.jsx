@@ -12,7 +12,14 @@ import FinanceRoutes from "./Finance/routes";
 import PharmacyRoutes from "../features/pharmacy/routes.jsx";
 import AppointmentRoutes from "../features/appointment-management/routes";
 import { EmrDashboardPage, EmrEncounterWorkspacePage } from "../features/emr";
-import ProtectedRoute from "../../components/ProtectedRoute";
+import CreditControlDashboardPage from "../features/credit-control/pages/CreditControlDashboardPage";
+import CreditControlCasesPage from "../features/credit-control/pages/CreditControlCasesPage";
+import CreditControlCaseDetailsPage from "../features/credit-control/pages/CreditControlCaseDetailsPage";
+import FollowUpWorklistPage from "../features/credit-control/pages/FollowUpWorklistPage";
+import CreditHoldsPage from "../features/credit-control/pages/CreditHoldsPage";
+import CreditDisputesPage from "../features/credit-control/pages/CreditDisputesPage";
+import WriteOffRecommendationsPage from "../features/credit-control/pages/WriteOffRecommendationsPage";
+import CreditControlReportsPage from "../features/credit-control/pages/CreditControlReportsPage";
 
 const PageLoader = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-slate-500">
@@ -33,74 +40,46 @@ const HMS = () => {
           <div className="mx-auto w-full max-w-[1600px]">
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* Auth Routes */}
                 <Route path="/auth/*" element={<AuthRoutes />} />
-                
-                {/* User Management Routes */}
-                <Route path="/admin/users/*" element={
-                  <ProtectedRoute roles={["SUPER_ADMIN", "ADMIN"]} />
-                }>
-                  <Route path="*" element={<UserRoutes />} />
+
+                <Route path="/admin/users/*" element={<UserRoutes />} />
+                <Route path="/cash-management/*" element={<CashManagementRoutes />} />
+                <Route path="/invoice-management/*" element={<InvoiceManagementRoutes />} />
+
+                <Route path="/credit-control/*">
+                  <Route index element={<CreditControlDashboardPage />} />
+                  <Route path="cases" element={<CreditControlCasesPage />} />
+                  <Route path="cases/:id" element={<CreditControlCaseDetailsPage />} />
+                  <Route path="follow-ups" element={<FollowUpWorklistPage />} />
+                  <Route path="holds" element={<CreditHoldsPage />} />
+                  <Route path="disputes" element={<CreditDisputesPage />} />
+                  <Route path="write-offs" element={<WriteOffRecommendationsPage />} />
+                  <Route path="reports" element={<CreditControlReportsPage />} />
+                  <Route path="*" element={<Navigate to="/credit-control" replace />} />
                 </Route>
-                
-                {/* Cash Management Routes */}
-                <Route path="/cash-management/*" element={
-                  <ProtectedRoute roles={["ADMIN", "CASHIER_SUPERVISOR", "CASHIER", "FINANCE_MANAGER"]} />
-                }>
-                  <Route path="*" element={<CashManagementRoutes />} />
-                </Route>
-                
-                {/* Invoice Management Routes */}
-                <Route path="/invoice-management/*" element={
-                  <ProtectedRoute roles={["ADMIN", "FINANCE_MANAGER", "CREDIT_CONTROLLER", "AUDITOR"]} />
-                }>
-                  <Route path="*" element={<InvoiceManagementRoutes />} />
-                </Route>
-                
-                {/* Patient Routes */}
+
                 <Route path="/patients/*" element={<PatientRoutes />} />
-                
-                {/* Finance Routes */}
                 <Route path="/finance/*" element={<FinanceRoutes />} />
-                
-                {/* Pharmacy Routes */}
                 <Route path="/pharmacy/*" element={<PharmacyRoutes />} />
 
-                {/* EMR Routes */}
-                <Route path="/emr" element={
-                  <ProtectedRoute roles={["NURSE", "DOCTOR", "CLINICIAN", "ADMIN"]}>
-                    <EmrDashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/emr/triage" element={
-                  <ProtectedRoute roles={["NURSE", "DOCTOR", "CLINICIAN", "ADMIN"]}>
-                    <EmrDashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/emr/encounters/:id" element={
-                  <ProtectedRoute roles={["NURSE", "DOCTOR", "CLINICIAN", "ADMIN"]}>
-                    <EmrEncounterWorkspacePage />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Appointment Management Routes */}
-                <Route path="/appointments/*" element={
-                  <ProtectedRoute roles={["RECEPTIONIST", "NURSE", "DOCTOR", "CLINICIAN", "ADMIN", "CLINIC_MANAGER"]} />
-                }>
-                  <Route path="*" element={<AppointmentRoutes />} />
-                </Route>
+                <Route path="/emr" element={<EmrDashboardPage />} />
+                <Route path="/emr/triage" element={<EmrDashboardPage />} />
+                <Route path="/emr/encounters/:id" element={<EmrEncounterWorkspacePage />} />
 
-                {/* Dashboard */}
-                <Route path="/dashboard" element={
-                  <div className="flex h-full items-center justify-center py-20">
-                    <div className="text-center">
-                      <h2 className="text-2xl font-bold text-slate-900 capitalize">Dashboard</h2>
-                      <p className="text-slate-500">This module is part of the restore point and will be fully available soon.</p>
+                <Route path="/appointments/*" element={<AppointmentRoutes />} />
+
+                <Route
+                  path="/dashboard"
+                  element={
+                    <div className="flex h-full items-center justify-center py-20">
+                      <div className="text-center">
+                        <h2 className="text-2xl font-bold text-slate-900 capitalize">Dashboard</h2>
+                        <p className="text-slate-500">This module is part of the restore point and will be fully available soon.</p>
+                      </div>
                     </div>
-                  </div>
-                } />
-                
-                {/* Default Redirect */}
+                  }
+                />
+
                 <Route path="/" element={<Navigate to="/appointments" replace />} />
                 <Route path="*" element={<Navigate to="/appointments" replace />} />
               </Routes>

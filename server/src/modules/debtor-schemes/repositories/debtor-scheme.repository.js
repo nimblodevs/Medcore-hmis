@@ -1,5 +1,4 @@
 import prisma from "../../../config/prisma.js";
-import { schemeAuditService } from "../services/scheme-audit.service.js";
 
 export class DebtorSchemeRepository {
   async create(data, user) {

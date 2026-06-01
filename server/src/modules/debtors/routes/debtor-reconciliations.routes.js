@@ -2,8 +2,6 @@ const express = require('express');
 const {
   getDebtorReconciliations,
   createDebtorReconciliation,
-  updateDebtorReconciliation,
-  closeDebtorReconciliation,
 } = require('../controllers/debtor-reconciliations.controller');
 
 const router = express.Router();

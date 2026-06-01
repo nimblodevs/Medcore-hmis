@@ -4,7 +4,7 @@ import prisma from "../../../config/database.js";
  * Get debtor summary report
  */
 export async function getDebtorSummaryReport(tenantId, branchId, filters = {}) {
-  const { debtorType, status, dateFrom, dateTo } = filters;
+  const { debtorType, status } = filters;
 
   const where = {
     tenantId,

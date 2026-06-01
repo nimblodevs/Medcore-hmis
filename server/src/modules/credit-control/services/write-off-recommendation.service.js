@@ -1,5 +1,5 @@
 import { writeOffRepository } from "../repositories/writeOff.repository.js";
-import { logWriteOffRecommended, logWriteOffApproved } from "./credit-audit.service.js";
+import { logWriteOffApproved } from "./credit-audit.service.js";
 
 /**
  * Recommend a write-off for an invoice/account
@@ -90,8 +90,6 @@ export async function approveWriteOff({
  */
 export async function rejectWriteOff({
   writeOffId,
-  tenantId,
-  branchId,
   rejectedById,
   rejectionReason,
 }) {
@@ -114,8 +112,6 @@ export async function rejectWriteOff({
  */
 export async function postWriteOff({
   writeOffId,
-  tenantId,
-  branchId,
   postedAdjustmentId,
 }) {
   const existingWriteOff = await writeOffRepository.findById(writeOffId);

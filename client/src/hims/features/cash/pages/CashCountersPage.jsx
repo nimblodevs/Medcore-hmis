@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Building2, Pencil, Trash2 } from "lucide-react";
 import { useCashCounters, useDeleteCashCounter } from "../hooks/useCash";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/Card";
+import { Badge } from "../../../components/ui/Badge";
 import {
   Table,
   TableBody,
@@ -13,14 +13,14 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from "../../../components/ui/table";
+} from "../../../components/ui/Table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from "../../../components/ui/dialog";
+} from "../../../components/ui/Dialog";
 import { CashCounterForm } from "../components/CashCounterForm";
 
 const CashCountersPage = () => {

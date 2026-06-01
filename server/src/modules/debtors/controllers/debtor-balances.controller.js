@@ -6,7 +6,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get current balance for a debtor account
  * GET /api/debtors/accounts/:accountId/balance
  */
-const getDebtorBalance = catchAsync(async (req, res, next) => {
+const getDebtorBalance = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const tenantId = req.tenant?.id;
 
@@ -27,7 +27,7 @@ const getDebtorBalance = catchAsync(async (req, res, next) => {
  * Recalculate balance for a debtor account
  * POST /api/debtors/accounts/:accountId/recalculate-balance
  */
-const recalculateDebtorBalance = catchAsync(async (req, res, next) => {
+const recalculateDebtorBalance = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -52,7 +52,7 @@ const recalculateDebtorBalance = catchAsync(async (req, res, next) => {
  * Get aging report for a debtor account
  * GET /api/debtors/accounts/:accountId/aging
  */
-const getDebtorAging = catchAsync(async (req, res, next) => {
+const getDebtorAging = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { asOfDate } = req.query;
   const tenantId = req.tenant?.id;
@@ -77,7 +77,7 @@ const getDebtorAging = catchAsync(async (req, res, next) => {
  * Get aging summary for all debtors or filtered by type
  * GET /api/debtors/aging/summary
  */
-const getAgingSummary = catchAsync(async (req, res, next) => {
+const getAgingSummary = catchAsync(async (req, res, _next) => {
   const { debtorType, status } = req.query;
   const { asOfDate } = req.query;
   const tenantId = req.tenant?.id;

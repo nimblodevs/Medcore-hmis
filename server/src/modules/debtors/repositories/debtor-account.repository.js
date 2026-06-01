@@ -1,6 +1,5 @@
 import prisma from "../../../config/database.js";
 import { generateDebtorCode, findDuplicateDebtor } from "../services/debtor-code.service.js";
-import { createAuditLog } from "../services/debtor-audit.service.js";
 
 /**
  * Create a new debtor account

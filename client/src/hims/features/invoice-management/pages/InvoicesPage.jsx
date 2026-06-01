@@ -3,9 +3,9 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Plus, Search, Eye, AlertCircle, CheckCircle } from "lucide-react";
 import { useInvoices } from "../hooks/useInvoices";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   Table,
   TableBody,
@@ -13,8 +13,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+} from "@/components/ui/Table";
+import { Card, CardContent } from "@/components/ui/Card";
 import { formatCurrency } from "../utils/moneyFormat";
 import { getInvoiceStatusColor } from "../utils/invoiceStatus";
 

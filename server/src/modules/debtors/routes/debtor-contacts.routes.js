@@ -2,8 +2,6 @@ const express = require('express');
 const {
   getDebtorContacts,
   createDebtorContact,
-  updateDebtorContact,
-  deactivateDebtorContact,
 } = require('../controllers/debtor-contacts.controller');
 
 const router = express.Router();

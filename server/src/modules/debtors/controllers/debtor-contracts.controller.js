@@ -11,7 +11,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get all contracts for a debtor account
  * GET /api/debtors/accounts/:accountId/contracts
  */
-const getDebtorContracts = catchAsync(async (req, res, next) => {
+const getDebtorContracts = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { isActive } = req.query;
   const tenantId = req.tenant?.id;
@@ -34,7 +34,7 @@ const getDebtorContracts = catchAsync(async (req, res, next) => {
  * Create a new contract for a debtor account
  * POST /api/debtors/accounts/:accountId/contracts
  */
-const createDebtorContract = catchAsync(async (req, res, next) => {
+const createDebtorContract = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const validatedData = await createDebtorContractSchema.parseAsync(req.body);
   
@@ -71,7 +71,7 @@ const createDebtorContract = catchAsync(async (req, res, next) => {
  * Update a debtor contract
  * PATCH /api/debtors/contracts/:id
  */
-const updateDebtorContract = catchAsync(async (req, res, next) => {
+const updateDebtorContract = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const validatedData = await updateDebtorContractSchema.parseAsync(req.body);
   
@@ -113,7 +113,7 @@ const updateDebtorContract = catchAsync(async (req, res, next) => {
  * Activate a debtor contract
  * POST /api/debtors/contracts/:id/activate
  */
-const activateDebtorContract = catchAsync(async (req, res, next) => {
+const activateDebtorContract = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;
@@ -156,7 +156,7 @@ const activateDebtorContract = catchAsync(async (req, res, next) => {
  * Deactivate a debtor contract
  * POST /api/debtors/contracts/:id/deactivate
  */
-const deactivateDebtorContract = catchAsync(async (req, res, next) => {
+const deactivateDebtorContract = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;

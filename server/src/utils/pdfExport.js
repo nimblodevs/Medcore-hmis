@@ -58,7 +58,7 @@ export const generatePharmacyReceiptPDF = (sale, items) => {
       let y = tableTop + 25;
       doc.font('Helvetica').fontSize(9);
       
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const itemName = item.pharmacyItem?.name || 'Unknown Item';
         const truncatedName = itemName.length > 45 ? itemName.substring(0, 42) + '...' : itemName;
         

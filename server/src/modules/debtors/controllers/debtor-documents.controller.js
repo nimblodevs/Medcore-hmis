@@ -7,7 +7,7 @@ const { catchAsync } = require('../../../utils/catchAsync');
  * Get all documents for a debtor account
  * GET /api/debtors/accounts/:accountId/documents
  */
-const getDebtorDocuments = catchAsync(async (req, res, next) => {
+const getDebtorDocuments = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { documentType } = req.query;
   const tenantId = req.tenant?.id;
@@ -30,7 +30,7 @@ const getDebtorDocuments = catchAsync(async (req, res, next) => {
  * Upload a new document for a debtor account
  * POST /api/debtors/accounts/:accountId/documents
  */
-const uploadDebtorDocument = catchAsync(async (req, res, next) => {
+const uploadDebtorDocument = catchAsync(async (req, res, _next) => {
   const { accountId } = req.params;
   const { documentType, fileName, fileUrl, mimeType, fileSize, notes } = req.body;
   
@@ -76,7 +76,7 @@ const uploadDebtorDocument = catchAsync(async (req, res, next) => {
  * Delete a debtor document
  * DELETE /api/debtors/documents/:id
  */
-const deleteDebtorDocument = catchAsync(async (req, res, next) => {
+const deleteDebtorDocument = catchAsync(async (req, res, _next) => {
   const { id } = req.params;
   const user = req.user;
   const tenantId = req.tenant?.id;

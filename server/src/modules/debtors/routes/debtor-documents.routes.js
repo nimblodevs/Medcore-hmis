@@ -2,7 +2,6 @@ const express = require('express');
 const {
   getDebtorDocuments,
   uploadDebtorDocument,
-  deleteDebtorDocument,
 } = require('../controllers/debtor-documents.controller');
 
 const router = express.Router();

@@ -2,9 +2,6 @@ const express = require('express');
 const {
   getDebtorContracts,
   createDebtorContract,
-  updateDebtorContract,
-  activateDebtorContract,
-  deactivateDebtorContract,
 } = require('../controllers/debtor-contracts.controller');
 
 const router = express.Router();
